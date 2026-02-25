@@ -5,6 +5,6 @@
 ```bash
 sudo apt install git
 
----
+```
 
 ## Creation d'un dossier
