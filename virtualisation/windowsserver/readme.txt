@@ -1,4 +1,4 @@
-Sript ok 
+git show + uudi (donné par le git lg) 
 Change l'ancien nom et chemin d'accès de l'iso  en nouveau nom
 Check cd isooperatingsystem et cd Virtualbox Vms
 
