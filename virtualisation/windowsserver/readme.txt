@@ -3,14 +3,11 @@ git checkout uid nom.du.fichier
 
 Visualise un fichier
 git show + uudi (donné par le git lg)
+Check cd isooperatingsystem et cd Virtualbox Vms
 
  
 
 Change l'ancien nom et chemin d'accès de l'iso  en nouveau nom
-
-Check cd isooperatingsystem et cd Virtualbox Vms
-
-
 sed -i 's/WindowsServer2022/WS22/g' a-registervm.sh b-mediumdisk.sh c-startvm.sh
 
 
@@ -51,12 +48,6 @@ Une fois Windows installé :
 ❌ Désactiver le Lecteur optique ou
 
 Mettre Disque dur en premier
-
-
-CODE
-
-sed -i 's/WindowsServer2022/WS22/g' storagectl.sh 
-
 
 
 Nom de la VM :WindowsServer2022
@@ -107,3 +98,8 @@ Vérifie si alias existe
 git config --global --get alias.lg
 Ajuote un alias 
 git config --global alias.lg "log --oneline --graph --all --decorate --color"
+
+
+
+
+
