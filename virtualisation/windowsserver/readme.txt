@@ -1,5 +1,4 @@
-Revenir au code d'un fichier supprimé
-git checkout uid nom.du.fichier
+#####Installation de windows server 2022 (éval)#####
 
 Visualise un fichier
 git show + uudi (donné par le git lg)
@@ -8,41 +7,45 @@ Check cd isooperatingsystem et cd Virtualbox Vms
  
 
 Change l'ancien nom et chemin d'accès de l'iso  en nouveau nom
+=======
+Lien du fichier : 
+https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_fr-fr.iso
+
+
+#Pré-requis
+Nom Vm : WindowsServer2022
+Utiliateur : 
+Mdp : 
+cd Virtualbox Vms (vérifier si il n'y a pas de VM existante)
+
+#VERIFICATION si virtualisation dans BIOS est activé
+#si 0 = désactivé
+egrep -c '(vmx|svm)' /proc/cpuinfo
+              
+#Voir si state fantôme
+vboxmanage list hdds | grep State
+
+Remplace l'ancien nom par ule nouveau nom de la vm dans les scripts
 sed -i 's/WindowsServer2022/WS22/g' a-registervm.sh b-mediumdisk.sh c-startvm.sh
 
-
-
-2️⃣ Vérifie l’ordre de boot
-
+###Configuration de Virtualbox
+#Vérifie l’ordre de boot
 Configuration → Système → Carte mère
-
-Lecteur optique (PIIX3) VID ISO
-
-Disque dur (VDI°
-
-
-    Contrôleur SATA → ton disque dur (.vdi)
-
-    Contrôleur PIIX3 (IDE) → ton ISO Windows Server 2022
-
-🚀 Étapes finales pour démarrer l’installation
+Contrôleur PIIX3 (IDE) → ton ISO Windows Server 2022
+Contrôleur SATA → ton disque dur (.vdi)
 
 
 Rappel Configuration : 
 Processeur : activer PAE/NX
-Sockage Stata Controller :
-Avant installation activer 
-Sata Controler
-IDE
-1-Optical drive PIX3 : fichier.iso 
-2-Hard disk : fichier.vdi
-après l'installation supprimer Optical drive et selectionné Hard drive premier hard disk
+Vidéo memoire : 128
+
+#Lancer les scripts
+a-registervm.sh
+b-mediumdisk.sh
+c-startvm.sh
 
 
-
-
-💾 Après installation (important)
-
+#Après installation (important)
 Une fois Windows installé :
 
 ❌ Désactiver le Lecteur optique ou
@@ -58,12 +61,18 @@ egrep -c '(vmx|svm)' /proc/cpuinfo
                 si 0 = désactivé
 ls -lh $HOME/isooperatingsystem/WindowsServer2022.iso
 
-VBoxManage list vms
-vboxmanage list hdds | grep State
- 
-          voir state fantôme
+=======
+Désactiver le Lecteur optique et mettre Disque dur en premier
 
-A la fin de l'installation
+
+
+###Commandes utiles de Virtualbox
+#Liste Vm
+VBoxManage list vms
+VBoxManage list runningvms
+
+
+#Check installation
 VBoxManage showvminfo "WindowsServer2022"
 VBoxManage showvminfo "WindowsServer2022" --details | grep -A5 "Controller"
 VBoxManage showvminfo "WindowsServer2022" --details | grep -A5 "Controller"
@@ -75,29 +84,32 @@ VBoxManage showvminfo "WindowsServer2022" | grep CPUs
 
 SOLVED : Faiire storagectl pour créer puis storagattach
 
-
-VBoxManage list vms
-VBoxManage list runningvms
-
-VBoxManage list hdds
+#List vm fantôme
+VBoxManage list hdds 
 VBoxManage closemedium disk UUID --delete
-
-
 
 VBoxManage controlvm "NomDeLaVM" poweroff
 
 VBoxManage storagectl "WindowsServer2022" --name "SATA Controller" --remove
 VBoxManage storagectl "WindowsServer2022" --name "IDE Controller" --remove
+
 VBoxManage unregistervm "Windows-server-" --delete
 
 
 
-Liste alias
-git config --global --get-regexp alias
-Vérifie si alias existe
-git config --global --get alias.lg
-Ajuote un alias 
+###Alias
+#Ajoute un alias 
 git config --global alias.lg "log --oneline --graph --all --decorate --color"
+
+<<<<<<< HEAD
+=======
+#Liste alias
+git config --global --get-regexp alias
+
+#Vérifie si alias existe
+git config --global --get alias.lg
+
+
 
 
 
