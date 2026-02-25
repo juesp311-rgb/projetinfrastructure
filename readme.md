@@ -1,9 +1,12 @@
-Installation de git et configuration sous Debian
-sudo apt install git
+Installation de git et configuration sous Debian  
 
-#Creation d'un dossier
-cd  projet
-git init
+sudo apt install git  
+
+#Creation d'un dossier  
+
+'''cd projet
+git init'''y
+
 
 
 
