@@ -1,1 +1,0 @@
-Projet mini-infrastructure
