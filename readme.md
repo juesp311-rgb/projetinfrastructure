@@ -1,5 +1,4 @@
-# Installation et configuration de Git sous Debian
-
+# Installation de Git et configuration sous Debian  
 ```bash
 sudo apt install git
 
