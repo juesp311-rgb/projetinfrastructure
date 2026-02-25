@@ -90,3 +90,12 @@ VBoxManage controlvm "NomDeLaVM" poweroff
 VBoxManage storagectl "WindowsServer2022" --name "SATA Controller" --remove
 VBoxManage storagectl "WindowsServer2022" --name "IDE Controller" --remove
 VBoxManage unregistervm "Windows-server-" --delete
+
+
+
+Liste alias
+git config --global --get-regexp alias
+Vérifie si alias existe
+git config --global --get alias.lg
+Ajuote un alias 
+git config --global alias.lg "log --oneline --graph --all --decorate --color"
