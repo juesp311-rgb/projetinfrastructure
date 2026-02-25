@@ -1,4 +1,4 @@
-
+Sript ok 
 Change l'ancien nom et chemin d'accès de l'iso  en nouveau nom
 Check cd isooperatingsystem et cd Virtualbox Vms
 
