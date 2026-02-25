@@ -101,3 +101,52 @@ git checkout uid nom.du.fichier
 Visualise un fichier
 git show + uudi (donné par le git lg)
 
+1️⃣ Depuis le dépôt racine
+
+Assure-toi d’être dans le dossier racine de ton projet local :
+
+cd ~/formationtssr/projetinfrastructure
+2️⃣ Ajouter le dépôt GitHub comme remote
+
+Remplace tonpseudo et projetinfrastructure par tes infos GitHub :
+
+git remote add origin https://github.com/tonpseudo/projetinfrastructure.git
+
+Vérifie :
+
+git remote -v
+
+Tu devrais voir origin pour fetch et push.
+
+3️⃣ Pousser la branche main
+git push -u origin main
+
+-u crée la tracking branch, tu pourras juste faire git push après.
+
+Tous tes commits de main (y compris virtualisation/windowsserver) seront sur GitHub.
+
+4️⃣ Pousser la branche feature/virtualisation
+
+Si tu veux garder la branche feature sur GitHub :
+
+git push -u origin feature/virtualisation
+
+Cela permet de suivre la branche et de collaborer si besoin.
+
+5️⃣ Vérifier sur GitHub
+
+Ouvre ton dépôt GitHub → tu devrais voir :
+
+Tous tes fichiers et dossiers (virtualisation, windowsserver, scripts .sh)
+
+Toutes tes branches (main, feature/virtualisation)
+
+L’historique des commits (git lg correspondra aux commits affichés sur GitHub).
+
+6️⃣ Pour les prochaines modifications
+
+Ensuite, la routine devient simple :
+
+git add .
+git commit -m "Nouveau message"
+git push
