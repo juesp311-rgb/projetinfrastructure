@@ -1,5 +1,13 @@
-git show + uudi (donné par le git lg) 
+Revenir au code d'un fichier supprimé
+git checkout uid nom.du.fichier
+
+Visualise un fichier
+git show + uudi (donné par le git lg)
+
+ 
+
 Change l'ancien nom et chemin d'accès de l'iso  en nouveau nom
+
 Check cd isooperatingsystem et cd Virtualbox Vms
 
 
