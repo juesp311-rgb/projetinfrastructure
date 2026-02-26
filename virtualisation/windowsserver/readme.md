@@ -1,71 +1,71 @@
-#Installation de windows server 2022 (éval)#####
+# Installation de windows server 2022 (éval)
 
 [Lien Windowsserver eval](https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x>)
 
-https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_fr-fr.iso
+## Pré-requis
 
-
-#Pré-requis
-Nom Vm : WindowsServer2022
-Utiliateur : 
+Nom Vm : $VM_name
+Utilisateur : 
 Mdp : 
 cd Virtualbox Vms (vérifier si il n'y a pas de VM existante)
 
-#VERIFICATION si virtualisation dans BIOS est activé
-#si 0 = désactivé
+## VERIFICATION si virtualisation dans BIOS est activé
+
+>si 0 = désactivé
+
+```bash
 egrep -c '(vmx|svm)' /proc/cpuinfo
+```
               
-#Voir si state fantôme
+## Voir si state fantôme
+
+```bash
 vboxmanage list hdds | grep State
+```
 
-Remplace l'ancien nom par ule nouveau nom de la vm dans les scripts
+## Remplace l'ancien nom par ule nouveau nom de la vm dans les scripts
+
+```bash
 sed -i 's/WindowsServer2022/WS22/g' a-registervm.sh b-mediumdisk.sh c-startvm.sh
+```
 
-###Configuration de Virtualbox
-#Vérifie l’ordre de boot
-Configuration → Système → Carte mère
-Contrôleur PIIX3 (IDE) → ton ISO Windows Server 2022
-Contrôleur SATA → ton disque dur (.vdi)
+## Configuration de Virtualbox
+## Vérifie l’ordre de boot
+
+>Configuration → Système → Carte mère
+>Contrôleur PIIX3 (IDE) → ton ISO Windows Server 2022
+>Contrôleur SATA → ton disque dur (.vdi)
 
 
-Rappel Configuration : 
-Processeur : activer PAE/NX
-Vidéo memoire : 128
+>Rappel Configuration : 
+>Processeur : activer PAE/NX
+>Vidéo memoire : 128
 
-#Lancer les scripts
+## Lancer les scripts
+
 a-registervm.sh
 b-mediumdisk.sh
 c-startvm.sh
 
 
-#Après installation (important)
+## Après installation (important)
+
 Une fois Windows installé :
 
-❌ Désactiver le Lecteur optique ou
-
-Mettre Disque dur en premier
-
-
-Nom de la VM :WindowsServer2022
-
-VERIFICATION avant le début de l'installation
-egrep -c '(vmx|svm)' /proc/cpuinfo
-              vérifier si virtualisation dans BIOS est bien activé.
-                si 0 = désactivé
-ls -lh $HOME/isooperatingsystem/WindowsServer2022.iso
-
-=======
 Désactiver le Lecteur optique et mettre Disque dur en premier
 
 
+# #Commandes utiles de Virtualbox
+## Liste Vm
 
-###Commandes utiles de Virtualbox
-#Liste Vm
+```bash
 VBoxManage list vms
 VBoxManage list runningvms
+```
 
+## Check installation
 
-#Check installation
+```bash
 VBoxManage showvminfo "WindowsServer2022"
 VBoxManage showvminfo "WindowsServer2022" --details | grep -A5 "Controller"
 VBoxManage showvminfo "WindowsServer2022" --details | grep -A5 "Controller"
@@ -73,11 +73,13 @@ VBoxManage showvminfo "WindowsServer2022" | grep Boot
 VBoxManage showvminfo "WindowsServer2022" | grep -i iso
 VBoxManage showvminfo "WindowsServer2022" | grep Memory
 VBoxManage showvminfo "WindowsServer2022" | grep CPUs
-
+```
 
 SOLVED : Faiire storagectl pour créer puis storagattach
 
-#List vm fantôme
+## Cas  vm fantôme
+
+```bash
 VBoxManage list hdds 
 VBoxManage closemedium disk UUID --delete
 
@@ -87,19 +89,21 @@ VBoxManage storagectl "WindowsServer2022" --name "SATA Controller" --remove
 VBoxManage storagectl "WindowsServer2022" --name "IDE Controller" --remove
 
 VBoxManage unregistervm "Windows-server-" --delete
+```
 
+## Alias
+### Créer un alias
 
-
-###Alias
-#Ajoute un alias 
+```bash 
 git config --global alias.lg "log --oneline --graph --all --decorate --color"
+```
+###  Liste alias
 
-<<<<<<< HEAD
-=======
-#Liste alias
+```bash
 git config --global --get-regexp alias
+```
 
-#Vérifie si alias existe
+## #Vérifie si alias existe
 git config --global --get alias.lg
 
 
