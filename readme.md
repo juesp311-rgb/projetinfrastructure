@@ -139,7 +139,24 @@ Avoir :
 
 #### Machine & IP interne
 
-* Ubuntuweb : 192.168.56.10
+> Ubuntuweb
+>
+>> interface enp0s3 : 10.0.2.15 NAT (internet)
+>
+>> interface enp0s9 : 192.168.56.10 Host-only 
+>
+>> brd : 192.168.56.255 Broadcast
+
+
+
+>CentOS DB
+>
+>> 192.168.56.20
+
+Windows Client → 192.168.56.30
+
+
+
 * CentOS DB : 192.168.56.20
 * Windows client : 192.168.56.30
 
