@@ -1,6 +1,30 @@
 # Configuration Ip Statique
 
 ## Configuration du réseau dans Vbox
+> Supprimer l'ancienne clé ssh
+
+```bash
+ssh-keygen -f '/home/jukali/.ssh/known_hosts' -R '[127.0.0.1]:2222'
+### Accès à ubuntuserver via SSH
+#### Connexion en Nat avec port forwarding
+
+> Supprimer l'ancienne clé ssh
+
+```bash
+ssh-keygen -f '/home/jukali/.ssh/known_hosts' -R '[127.0.0.1]:2222'
+```
+> Configurer port 2222 dans Vbox
+```bash
+VBoxManage modifyvm "UbuntuServer" --natpf1 "SSH,tcp,,2222,,22"
+```
+
+> Lancer ssh (failed)
+
+```bash
+ssh ubuntuserverweb@127.0.0.1 -p 2222
+
+
+** Solution proposée **
 
 ### Ajout d'un adatptateur host-only
 
@@ -31,13 +55,21 @@ VBoxManage modifyvm "UbuntuServer" --nic3 hostonly --hostonlyadapter3 vboxnet0 -
 VBoxManage showvminfo "UbuntuServer" | grep -i nic
 ```
 
-> Configurer l’IP statique dans Ubuntu Server
+
+
+###  Configurer l’IP statique dans Ubuntu Server
+#### Connexion SSH via host-only
+
+```bash
+ssh ubuntuserverweb@192.168.56.10
+```
+
 
 ```bash
 cd /etc/netpan
 ```
 
-Pour la nouvelle interface (ex. enp0s9) :
+Pour la nouvelle interface host-only (ex. enp0s9) :
 
 ```bash 
 network:
@@ -57,24 +89,9 @@ Puis :
 sudo chmod 600 /etc/netplan/ubuntuipstatique.yaml
 sudo netplan apply
 ```
-### Accès à ubuntuserver via SSH
-
-```bash
-ssh ubuntuserverweb@10.0.2.15 
-```
->ne fonctionne pas
->
-> **Solution proposée**
-
-#### Nat avec port forwarding
-
-```bash
-VBoxManage modifyvm "UbuntuServer" --natpf1 "SSH,tcp,,2222,,22"
-ssh ubuntuserverweb@127.0.0.1 -p 2222
 ```
 
-#### Supprimer l'ancienne clé
-
+** Connextion SSH et configuration ip statique sur l'interface enps09 **
 
 
 ###Commandes utiles
