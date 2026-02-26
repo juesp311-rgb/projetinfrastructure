@@ -1,14 +1,7 @@
-#####Installation de windows server 2022 (éval)#####
+#Installation de windows server 2022 (éval)#####
 
-Visualise un fichier
-git show + uudi (donné par le git lg)
-Check cd isooperatingsystem et cd Virtualbox Vms
+[Lien Windowsserver eval](https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x>)
 
- 
-
-Change l'ancien nom et chemin d'accès de l'iso  en nouveau nom
-=======
-Lien du fichier : 
 https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_fr-fr.iso
 
 
