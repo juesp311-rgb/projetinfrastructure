@@ -32,27 +32,23 @@ sed -i 's/WindowsServer2022/WS22/g' a-registervm.sh b-mediumdisk.sh c-startvm.sh
 ## Configuration de Virtualbox
 ## Vérifie l’ordre de boot
 
->Configuration → Système → Carte mère
->Contrôleur PIIX3 (IDE) → ton ISO Windows Server 2022
->Contrôleur SATA → ton disque dur (.vdi)
+>Avant installation
+>
+> Contrôleur SATA → ton disque dur (.vdi)
+> Contrôleur PIIX3 (IDE) → ton ISO Windows Server 2022
 
 
->Rappel Configuration : 
->Processeur : activer PAE/NX
->Vidéo memoire : 128
+>Après l'installation
+>
+>Placer Contrôleur SATA en premier
+>Désactiver le lecteur optique
+
 
 ## Lancer les scripts
 
 a-registervm.sh
 b-mediumdisk.sh
 c-startvm.sh
-
-
-## Après installation (important)
-
-Une fois Windows installé :
-
-Désactiver le Lecteur optique et mettre Disque dur en premier
 
 
 # #Commandes utiles de Virtualbox
@@ -75,7 +71,7 @@ VBoxManage showvminfo "WindowsServer2022" | grep Memory
 VBoxManage showvminfo "WindowsServer2022" | grep CPUs
 ```
 
-SOLVED : Faiire storagectl pour créer puis storagattach
+>SOLVED : Faire storagectl pour créer puis storagattach
 
 ## Cas  vm fantôme
 
@@ -104,8 +100,10 @@ git config --global --get-regexp alias
 ```
 
 ## #Vérifie si alias existe
-git config --global --get alias.lg
 
+```bash
+git config --global --get alias.lg
+```
 
 
 
