@@ -2,3 +2,4 @@
 tmp/*
 log.txt
 install-wsl.ps1
+*.swp
