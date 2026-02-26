@@ -59,9 +59,12 @@ sudo netplan apply
 ```
 ### Accès à ubuntuserver via SSH
 
-#### ssh ubuntuserverweb@10.0.2.15 ne fonctionne pas 
-
-**Solution proposée**
+```bash
+ssh ubuntuserverweb@10.0.2.15 
+```
+>ne fonctionne pas
+>
+> **Solution proposée**
 
 #### Nat avec port forwarding
 
@@ -71,7 +74,6 @@ ssh ubuntuserverweb@127.0.0.1 -p 2222
 ```
 
 #### Supprimer l'ancienne clé
-ssh ubuntuserverweb@10.0.2.15
 
 
 
