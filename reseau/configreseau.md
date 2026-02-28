@@ -305,8 +305,10 @@ Vérification mac du port de l'hôte et windows
 
 > nom du reseau : reseauInterne
 
+> Depuis Ubuntu : 
 ```bash
-Depuis ubuntu, ping windows et centos ok
+ping 192.168.10.11
+ping 192.168.10.12
 ```
 
 
