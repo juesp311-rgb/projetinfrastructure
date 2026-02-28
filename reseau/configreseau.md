@@ -311,15 +311,55 @@ Depuis ubuntu, ping windows et centos ok
 
 
 
-| VM                  | Interface          | IP            | Réseau         |
-|--------------------|-----------------|---------------|----------------|
-| Kali (Hôte)        | Host-Only vbox0  | 192.168.56.1  | Host-Only      |
-|
-| Ubuntu Server      | enp0s9           | 192.168.56.10 | Host-Only      |
-|                    | enp0s8           | 192.168.10.10 | InternalNet    |
-|
-| CentOS BDD         | enp0s9           | 192.168.56.11 | Host-Only      |
-|                    | enp0s8           | 192.168.10.11 | InternalNet    |
-|
-| Windows Server 2022| Host-Only        | 192.168.56.12 | Host-Only      |
-|                    | Ethernet2        | 192.168.10.12 | InternalNet    |
+#### Résumé du réseau
+
+>Kali (hôte)
+>
+>> Interface : host-Only
+>
+>> Ip : 192.168.56.1
+>
+>>Réseau : Host-Only
+
+>Ubuntu server
+>
+>> Interface : enp0s9 
+>
+>>>Ip : 192.168.56.10
+>
+>>> Réseau : Host-Only
+>
+>> Interface enp0s8
+>
+>>> IP :  192.168.10.10
+>
+>>> Réseau : Internal Network 
+
+>Centos 
+> 
+>> Interface : enp0s9 
+> 
+>>>Ip : 192.168.56.11 
+> 
+>>> Réseau : Host-Only 
+> 
+>> Interface enp0s8 
+> 
+>>> IP :  192.168.10.11 
+> 
+>>> Réseau : Internal Network 
+
+
+> Windows server 
+> 
+>> Interface : Ethernet 3 
+> 
+>>>Ip : 192.168.56.10 
+> 
+>>> Réseau : Host-Only 
+> 
+>> Interface Ethernet 2
+> 
+>>> IP :  192.168.10.12 
+> 
+>>> Réseau : Internal Network 
