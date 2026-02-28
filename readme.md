@@ -118,49 +118,89 @@ Avoir :
 
 
 
+Configuration réseau Interne
+
+- 1 réseau NAT (internet)
+- 1 réseau Internal Network (communication entre vm)
+- 1 reséau host-only : (ssh)
+
+
+> VM  UbuntuServer 
+>
+>>Interface enp0s8
+>
+>> Ip : 192.168.10.10
+>
+>> NIC2 :  attachée à Internal Network
 
 
 ## 🎯 Objectif Phase 1 : Transformer tes 3 VMs en mini SI d’entreprise
 
 ### ÉTAPE 1 — Architecture réseau propre
 
-> #### Configuration réseau
->
->> 1 réseau NAT (internet)
->
->> 1 réseau Internal Network
->
->Configuration serveur :
->
->>Carte 1 : NAT (updates)
->
->>Carte 2 : accès par pont1 réseau NAT (internet)
+#### Configuration réseau Interne
+
+- 1 réseau NAT (internet)
+- 1 réseau Internal Network (communication entre vm)
+- 1 reséau host-only : (ssh)
 
 
-#### Machine & IP interne
+> VM  UbuntuServer 
+>
+>>Interface enp0s8
+>
+>> Ip : 192.168.10.10
+>
+>> NIC2 :  attachée à Internal Network
+
+> VM CentosBdd
+>
+>> Interface enps08
+>
+>> Ip : 192.168.10.11
+>
+>> NIC2 : attachée à Internal Network
+ 
+> VM WindowsServer
+>
+>> Interface : enps08
+>
+>> Ip: 192.168.10.13
+>
+>> NIC2 : attachée à Internal Network
+
+
+#### Configuration NAT et Host-Only
 
 > Ubuntuweb
 >
 >> interface enp0s3 : 10.0.2.15 NAT (internet)
 >
->> interface enp0s9 : 192.168.56.10 Host-only 
+>> interface enp0s8 : 192.168.10.10 internal network (ip statique: netplan) 
 >
->> brd : 192.168.56.255 Broadcast
-
-
-
->CentOS DB
+>> interface enp0s9 : 192.168.56.10 host-only (ssh)
 >
->> 192.168.56.20
-
-Windows Client → 192.168.56.30
+>> Mac enps09 : 08:00:27:....:16
 
 
+> Centosbdd
+>
+>> interface enp0s3 : 10.0.2.15 (internet)
+> 
+>> interface enp0s8 : 192.168.10.11 internal network (ip statique : nmcli)
+>
+>> interface enp0s9 : 192.168.56.10 host-only (ssh)
 
-* CentOS DB : 192.168.56.20
-* Windows client : 192.168.56.30
 
-👉 Ping OK entre toutes les machines.
+>
+
+> Windows Client
+>
+>> interface enp0s3 : 10.0.2.15 NAT (internet)
+>
+>>  interface enp0s8 : 192.168.10.12 internal network (ip statique) 
+>
+>> interface enp0s9 : 192.168.56.10 host-only (ssh)
 
 
 

@@ -1,10 +1,7 @@
 # Configuration Ip Statique Ubuntu
 
 ## Configuration du réseau dans Vbox
-> Supprimer l'ancienne clé ssh
 
-```bash
-ssh-keygen -f '/home/jukali/.ssh/known_hosts' -R '[127.0.0.1]:2222'
 ### Accès à ubuntuserver via SSH
 #### Connexion en Nat avec port forwarding
 
@@ -54,15 +51,24 @@ VBoxManage modifyvm "UbuntuServer" --nic3 hostonly --hostonlyadapter3 vboxnet0 -
 ```bash
 VBoxManage showvminfo "UbuntuServer" | grep -i nic
 ```
+### Identifier l'addresse mac de l'adaptateur host-only
 
-
-
-###  Configurer l’IP statique dans Ubuntu Server
-#### Connexion SSH via host-only pour le transfert de fichier
+> Configurer l'interface de la VM qui à la meme adresse mac que l'adaptateur host-only
+>
+>> ```bash
+>
+>> sudo ip addr flush dev enp0s8
+>
+>> sudo ip addr add 192.168.56.10/24 dev enp0s9
+>
+>>sudo ip link set enp0s8 up
+```
+### Se connecter à la vm via ssh pour le transfert de fichier
 
 ```bash
-ssh ubuntuserverweb@192.168.56.10
+ssh ubuntuserverweb@192.168.10.10 (de kali)
 ```
+
 #### Vérification de l'adresse MAC Host-only enps09
 
 ```bash
@@ -70,14 +76,8 @@ ip a show
 ip link show
 ```
 
-#### Vérification de l'adresse MAC reseau interne enps08
 
-```bash
-ip a show
-ip link show
-```
-
-#### Configuration IP statique
+### Configuration IP statique
 
 >Ouvrir le fichier netplan
 
@@ -252,4 +252,44 @@ nmcli con show hostonly | grep ipv4.method
 > Reconnecte
 >
 >>ssh centosbdd@192.168.56.10
+
+# Configuration Windows server 2022 (eval)
+
+## Configuration Virtualbox
+
+###  interface Nat 
+
+###  interface reseau interne
+
+###  interface host-only pour activer ssh
+
+> Activer NIC 3 et le rattacher au host-only
+
+```bash
+VBoxManage modifyvm "WindowsServer" --nic3 hostonly
+VBoxManage modifyvm "WindowsServer" --hostonlyadapter3 vboxnet0
+VBoxManage modifyvm "WindowsServer" --cableconnected3 on
+```
+
+
+## Connexion ssh 
+Vérification mac du port de l'hôte et windows
+
+## Ip statique
+
+ Windows Client
+>
+>> interface enp0s3 : 10.0.2.15 NAT (internet)
+>
+>>  interface enp0s8 : 192.168.10.12 internal network (ip statique) 
+>
+>> interface enp0s9 : 192.168.56.10 host-only (ssh) Windows Client
+>
+>> interface enp0s3 : 10.0.2.15 NAT (internet)
+>
+>>  interface enp0s8 : 192.168.10.12 internal network (ip statique) 
+>
+>> interface enp0s9 : 192.168.56.10 host-only (ssh)
+
+
 

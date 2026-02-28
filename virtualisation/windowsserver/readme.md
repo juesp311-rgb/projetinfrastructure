@@ -62,7 +62,7 @@ VBoxManage list runningvms
 ## Check installation
 
 ```bash
-VBoxManage showvminfo "WindowsServer2022"
+VboxManage showvminfo "WindowsServer"
 VBoxManage showvminfo "WindowsServer2022" --details | grep -A5 "Controller"
 VBoxManage showvminfo "WindowsServer2022" --details | grep -A5 "Controller"
 VBoxManage showvminfo "WindowsServer2022" | grep Boot
