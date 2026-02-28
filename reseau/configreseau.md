@@ -213,20 +213,14 @@ sudo systemctl stop firewalld
 >>Solution
 >
 >>  Pour voir l’entrée existante :
->
->> ```bash 
->
->>ssh-keygen -F 192.168.56.10
->
+```bash 
+ssh-keygen -F 192.168.56.10
+```
 >> Pour supprimer l’ancienne clé :
->
->>```bash
->
->>ssh-keygen -R 192.168.56.10
->
->> ssh centosbdd@192.168.56.10
->
->>```
+
+```bash
+ssh-keygen -R 192.168.56.10
+```
 
 ** connexion ssh **
 
