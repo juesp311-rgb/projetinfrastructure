@@ -253,7 +253,17 @@ nmcli con show hostonly | grep ipv4.method
 >
 >>ssh centosbdd@192.168.56.10
 
+
+
+
+
+
+
 # Configuration Windows server 2022 (eval)
+
+```bash 
+wsl --install
+```
 
 ## Configuration Virtualbox
 
@@ -272,14 +282,169 @@ VBoxManage modifyvm "WindowsServer" --cableconnected3 on
 ```
 
 
-## Connexion ssh 
-Vérification mac du port de l'hôte et windows
+## Interface réseau
+
+> Carte Ethernet : 10.0.2.15 (NAT)
+> Carte Ethernet 2 : 169.254.183.239 (reseau interne)
+> Carte Ethernet 3 : 192.168.56.101 (host-only)
+
+
+
+## Connexion SSH
+
+>Installer le serveur OpenSSh
+
+```bash
+ Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+```
+> Vérifier l’installation
+
+```bash
+Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
+```
+
+> Démarrer et activer le service SSH
+
+```bash
+Start-Service sshd
+> ou de manière automatic
+Set-Service -Name sshd -StartupType Automatic
+```
+
+> Vérifier que SSH fonctionne
+```bash
+Get-Service -Name sshd
+```
+
+> Vérifier que le port 22 est à l'écoute
+
+```bash
+netstat -an | findstr :22
+```
+
+> Teste la connexion locale (depuis le serveur) :
+
+```bash
+ssh localhost
+``` 
+
 
 ## Ip statique
 
+<<<<<<< HEAD
 ubuntuserverweb : 192.168.10.10
 centosbdd : 192.168.10.11
 windowsserver2022 : 192.168.10.12 
+=======
+>Vérifier le nom exact de l’interface
+
+```bash 
+Get-NetAdapter
+```
+
+> Supprimer toute configuration IP existante (optionnel mais recommandé)
+
+```bash
+Remove-NetIPAddress -InterfaceAlias "Ethernet2" -Confirm:$false
+```
+
+> Configurer une IP statique
+
+```bash
+
+> New-NetIPAddress -InterfaceAlias "Ethernet2" -IPAddress 192.168.10.12 -PrefixLength 24 -DefaultGateway 192.168.10.1
+```
+
+> Configurer le server DNS
+
+```bash
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet2" -ServerAddresses ("8.8.8.8","8.8.4.4")
+```
+
+> Vérifier la configuration 
+
+```bash
+Get-NetIPAddress -InterfaceAlias "Ethernet2"
+Get-DnsClientServerAddress -InterfaceAlias "Ethernet2"
+```
+** Cela montre l’IP, le masque, la passerelle et les DNS configurés.**
+
+
+># ===============================
+>
+># Configuration IP statique pour Ethernet2
+>
+># ===============================
+>
+># Paramètres réseau à modifier
+>
+>$InterfaceName = "Ethernet2"
+>
+>$IPAddress      = "192.168.10.50"      # IP souhaitée
+>
+>$PrefixLength   = 24                    # Masque en CIDR (24 = 255.255.255.0)
+>
+>$Gateway        = "192.168.10.1"       # Passerelle
+>
+>$DNSServers     = @("8.8.8.8","8.8.4.4") # DNS (ici Google, à adapter)
+>
+>
+>
+># -------------------------------
+>
+># Étape 1 : Supprimer toute IP existante (optionnel mais recommandé)
+>
+># -------------------------------
+>
+>Write-Host "Suppression des IP existantes sur $InterfaceName..."
+>
+>Get-NetIPAddress -InterfaceAlias $InterfaceName -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false
+>
+>
+>
+># -------------------------------
+>
+># Étape 2 : Ajouter la nouvelle IP statique
+>
+># -------------------------------
+>
+>Write-Host "Ajout de l'IP statique $IPAddress/$PrefixLength avec passerelle $Gateway..."
+>
+>New-NetIPAddress -InterfaceAlias $InterfaceName -IPAddress $IPAddress -PrefixLength $PrefixLength -DefaultGateway $Gateway
+>
+>
+>
+>
+>
+>#-------------------------------
+>
+># Étape 3 : Configurer les serveurs DNS
+>
+># -------------------------------
+>
+>Write-Host "Configuration des serveurs DNS : $($DNSServers -join ', ')..."
+>
+>Set-DnsClientServerAddress -InterfaceAlias $InterfaceName -ServerAddresses $DNSServers
+>
+>
+>
+># -------------------------------
+>
+># Étape 4 : Vérifier la configuration
+>
+># -------------------------------
+>
+>Write-Host "Configuration réseau actuelle pour $InterfaceName :"
+>
+>Get-NetIPAddress -InterfaceAlias $InterfaceName
+>
+>Get-DnsClientServerAddress -InterfaceAlias $InterfaceName
+>
+>
+>
+>Write-Host "✅ Configuration IP statique terminée !"
+
+>>>>>>> aab7efd123c57357511e48ff659bded07da402a6
 
 
 
