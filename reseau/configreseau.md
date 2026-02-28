@@ -277,19 +277,64 @@ Vérification mac du port de l'hôte et windows
 
 ## Ip statique
 
- Windows Client
->
->> interface enp0s3 : 10.0.2.15 NAT (internet)
->
->>  interface enp0s8 : 192.168.10.12 internal network (ip statique) 
->
->> interface enp0s9 : 192.168.56.10 host-only (ssh) Windows Client
->
->> interface enp0s3 : 10.0.2.15 NAT (internet)
->
->>  interface enp0s8 : 192.168.10.12 internal network (ip statique) 
->
->> interface enp0s9 : 192.168.56.10 host-only (ssh)
+ubuntuserverweb : 192.168.10.10
+centosbdd : 192.168.10.11
+windowsserver2022 : 192.168.10.12 
 
 
 
+
+# Vérifier le reseau interne
+
+> Assure-toi que chaque VM a bien une IP dans le même subnet pour le réseau interne
+>
+>> ubuntuserverweb : 192.168.10.10
+>
+ inet 192.168.10.10
+ netmask 255.255.255.0
+ broadcast 192.168.10.255
+>
+>> windowsserver20222 :
+   Adresse IPv4. . . . . . . . . . . . . .: 192.168.10.12
+   Masque de sous-réseau. . . . . . . . . : 255.255.255.0
+   Passerelle par défaut. . . . . . . . . : 192.168.10.1
+>
+>> centosbdd :  inet 192.168.10.11/24 brd 192.168.10.255 
+inet 192.168.10.11
+netmask 255.255.255.0 
+broadcast 192.168.10.255
+
+## Véfication ssh
+
+> ssh ubuntuserverweb@192.168.56.10                                                                               
+> ssh centosbdd@192.168.56.11 
+> ssh Administrateur@192.168.56.101
+
+### Vérification reseau interne
+
+> nom du reseau : reseauInterne
+
+```bash
+ping ...
+```
+
+
+
+          ┌─────────────┐
+          │   Kali (Hôte) │
+          │ 192.168.56.1 │ Host-Only
+          └───────┬─────┘
+                  │
+          Host-Only vboxnet0
+                  │
+ ┌─────────────┬─────────────┬─────────────┐
+ │             │             │             │
+ │ Ubuntu      │ CentOS      │ Windows     │
+ │ Server      │ BDD         │ Server 2022 │
+ │ enp0s9      │ enp0s9      │ Host-Only   │
+ │ 192.168.56.10│192.168.56.11│192.168.56.12│
+ │             │             │             │
+ │ enp0s8      │ enp0s8      │ Ethernet2   │
+ │ 192.168.10.10│192.168.10.11│192.168.10.12│
+ │ InternalNet │ InternalNet │ InternalNet │
+ └─────────────┴─────────────┴─────────────┘
