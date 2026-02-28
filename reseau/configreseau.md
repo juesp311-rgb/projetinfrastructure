@@ -247,9 +247,9 @@ nmcli con show hostonly | grep ipv4.method
 
 ## Configuration Virtualbox
 
-###  interface Nat 
-
-###  interface reseau interne
+- interface Nat 
+- Ethernet 2 : reseau interne
+- Ethernet 3 : host-only
 
 ###  interface host-only pour activer ssh
 
@@ -261,29 +261,24 @@ VBoxManage modifyvm "WindowsServer" --hostonlyadapter3 vboxnet0
 VBoxManage modifyvm "WindowsServer" --cableconnected3 on
 ```
 
-
 ## Connexion ssh 
 Vérification mac du port de l'hôte et windows
 
 ## Ip statique
 
-ubuntuserverweb : 192.168.10.10
-centosbdd : 192.168.10.11
-windowsserver2022 : 192.168.10.12 
-
-
-
+- ubuntuserverweb : 192.168.10.10
+- centosbdd : 192.168.10.11
+- windowsserver2022 : 192.168.10.12 
 
 # Vérifier le reseau interne
 
-> Assure-toi que chaque VM a bien une IP dans le même subnet pour le réseau interne
->
+**  VM : IP dans le même subnet pour le réseau interne **
+
 >> ubuntuserverweb : 192.168.10.10
->
- inet 192.168.10.10
- netmask 255.255.255.0
- broadcast 192.168.10.255
->
+> inet 192.168.10.10
+> netmask 255.255.255.0
+> broadcast 192.168.10.255
+ 
 >> windowsserver20222 :
    Adresse IPv4. . . . . . . . . . . . . .: 192.168.10.12
    Masque de sous-réseau. . . . . . . . . : 255.255.255.0
