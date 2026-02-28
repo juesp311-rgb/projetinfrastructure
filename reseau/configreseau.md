@@ -19,7 +19,7 @@ VBoxManage modifyvm "UbuntuServer" --natpf1 "SSH,tcp,,2222,,22"
 
 ```bash
 ssh ubuntuserverweb@127.0.0.1 -p 2222
-
+```
 
 ** Solution proposée **
 
@@ -54,14 +54,10 @@ VBoxManage showvminfo "UbuntuServer" | grep -i nic
 ### Identifier l'addresse mac de l'adaptateur host-only
 
 > Configurer l'interface de la VM qui à la meme adresse mac que l'adaptateur host-only
->
->> ```bash
->
->> sudo ip addr flush dev enp0s8
->
->> sudo ip addr add 192.168.56.10/24 dev enp0s9
->
->>sudo ip link set enp0s8 up
+```bash
+ sudo ip addr flush dev enp0s8
+ sudo ip addr add 192.168.56.10/24 dev enp0s9
+ git commit -m "Résolution des conflits"sudo ip link set enp0s8 up
 ```
 ### Se connecter à la vm via ssh pour le transfert de fichier
 
@@ -107,16 +103,11 @@ network:
       # pas de gateway
 ```
 
-> Supprime gateway4 pour enp0s9 → plus de warning
->
-> Internal Network enp0s8 → IP statique 192.168.10.10
-
 > Appliquer la configuration netplan
->
-> sudo chmod 600 /etc/netplan/ubuntuipstatique.yaml
->
-> sudo netplan apply
-`
+```bash
+sudo chmod 600 /etc/netplan/ubuntuipstatique.yaml
+sudo netplan apply
+```
 
 ** Connextion SSH : enps09 **
 ** IP statique reseau interne : enps08 **
@@ -126,11 +117,8 @@ network:
 # Configuration CentosBdd (ssh + ip statique)
 ## Accès Centosbdd via ssh
 
-
-enps09 : host-only : ssh : 192.168.56.20
-enps08 : reseau interne : 192.168.10.11
-
-users : centosbdd
+> enps09 : host-only : ssh : 192.168.56.20
+> users : centosbdd
 
 
 ### Vérifier IP de CentosBdd
@@ -171,11 +159,13 @@ VBoxManage modifyvm "centosbdd" --nic3 hostonly --hostonlyadapter3 vboxnet0 --ca
 > Vérifier
 ```bash
 VBoxManage showvminfo "centosbdd" | grep -i nic
+```
+
 
 #### Atttribue IP à l'insterface enps09 qui a la même **  MAC **  adresse que vboxnet0
 
-> ** Réinitailise et configure interface : **
->
+** Réinitailise et configure interface : **
+
 >> ```bash
 >
 >> sudo ip addr flush dev enp0s8
