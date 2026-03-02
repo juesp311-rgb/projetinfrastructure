@@ -52,7 +52,7 @@ awk -F: '$3 >= 1000 {print $1}' /etc/passwd
 sudo su - utlisateur
 ```
 
-### Sécuriser SSH (important)
+### Configurer SSH 
 
 > Configuration sshd_config
 ```bash
@@ -98,7 +98,7 @@ PermitRootLogin no
 ```
 ** Vérifie avant si firewall allow OpenSSH **
 
-#### 🔐 Configuration SSH simple et sécurisée (courante sur Ubuntu)
+#### 🔐 Configuration SSH simple  (courante sur Ubuntu)
 
 > Dans /etc/ssh/sshd_config :
 ```bash
@@ -113,6 +113,51 @@ MaxAuthTries 3
 sudo systemctl restart ssh
 ```
 
+### Sécuriser ssh
+> Sur Kali (ordinateur hôte)
+>
+>>Créer une clé ssh
+```bash
+ssh-keygen -t ed25519
+```
+>
+>>Vérifier la clé
+```bash
+ls ~/.ssh/
+```
+
+> Copier la clé vers la VM Ubuntu
+>
+>> Connexion ssh autorisée seulement avec utilisateur adminsys
+>
+```bash
+ssh-copy-id adminsys@IP_DE_LA_VM
+```
+>> Connexion sans mot de passe 
+
+> Ensuite seulement sécuriser SSH
+>
+>>Dans la vm Ubuntu
+>
+```bash
+cd /etc/ssh/sshd_config
+```
+```bash
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+```
+> Vérifie avant de redemarrer ssh
+>
+>>Rien ne dois apparaître
+>
+```bash
+sudo sshd -t
+```
+> Redémarrer le service SSH
+```bash
+sudo systemctl restart ssh
+```
 #### 🛡️ Bonus sécurité très recommandé
 >Installer Fail2Ban pour bloquer les attaques SSH :
 ```bash
