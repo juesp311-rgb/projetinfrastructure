@@ -189,3 +189,44 @@ sudo ufw status
 
 
 
+### Sécuriser ssh
+>  Générer une clé SSH sur Kali (ton hôte)
+```bash
+ssh-keygen -t ed25519 -C "kali@ssh"
+```
+> Vérifie 
+```bash
+ls ~/.ssh/id_ed25519
+ls ~/.ssh/id_ed25519.pub
+```
+** Clé privée et clé publique **
+
+> Copier la clé sur ton serveur Ubuntu
+```bash
+ssh-copy-id adminsys@IP_DU_SERVEUR
+```
+>Modifier la configuration SSH
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+```bash
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+AllowUsers adminsys
+```
+
+> Vérifier avant de redémarrer SSH (important)
+```bash
+sudo sshd -t
+```
+> Redémarrer le service SSH
+```bash
+sudo systemctl restart ssh
+```
+
+>Tester la connexion
+```bash
+ssh adminsys@IP_DE_TA_VM
+```
