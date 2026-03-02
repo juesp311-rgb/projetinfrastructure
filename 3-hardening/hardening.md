@@ -91,7 +91,7 @@ PasswordAuthentication no
 ls ~/.ssh
 ```
 
-> Désactiver root sans avoir d’utilisateur sudo
+> Désactive root sans avoir d’utilisateur sudo
 >>Configuration 
 ```bash
 PermitRootLogin no
