@@ -238,7 +238,7 @@ Test-ADServiceAccount gmsa-delegue
 	- Possède un SID (Security Identifier)
 	- Peut être utilisé dans les ACL (listes de contrôle d’accès)
 
-**✅ Utilisé pour la gestion des droits**
+	- **✅ Utilisé pour la gestion des droits**
 
 -**Groupe de distribution**
 	- Sert uniquement pour les listes de diffusion (email)
@@ -545,6 +545,7 @@ Install-ADDSForest `
 		- Active Directory utilise ces relations pour authentifier et autoriser les utilisateurs entre domaines.
 
 - 🔹 Types de relations d’approbation
+
 	-**Approvisionnement automatique (implicite)**
 		- Parent → enfant dans une arborescence de domaine
 		- Créée automatiquement lors de la création d’un domaine enfant
@@ -905,9 +906,9 @@ Set-ADUser -Identity jdupont `
 -Title "Chef de projet" `
 -Department "IT"
 ```
-
-	>- Identity → identifie l’objet (nom, SamAccountName, ou DN)
-	>>- On peut modifier nom, titre, département, description, manager, mot de passe, etc.
+> Identity → identifie l’objet (nom, SamAccountName, ou DN)
+>
+> On peut modifier nom, titre, département, description, manager, mot de passe, etc.
 
 
 
@@ -916,8 +917,7 @@ Set-ADUser -Identity jdupont `
 Move-ADObject -Identity "CN=Jean Dupont,OU=IT,DC=entreprise,DC=local" `
 -TargetPath "OU=Marketing,DC=entreprise,DC=local"
 ```
-
-	>>- Permet de réorganiser les objets dans d’autres OU ou conteneurs.
+> Permet de réorganiser les objets dans d’autres OU ou conteneurs.
 
 
 - Supprimer un objet
@@ -927,9 +927,9 @@ Remove-ADComputer -Identity PC01
 Remove-ADGroup -Identity "Marketing"
 ```
 
-	>>- Supprime l’objet et ses références dans AD
-	>
-	>>- Il est conseillé d’activer la protection contre suppression accidentelle sur les objets importants.
+>- Supprime l’objet et ses références dans AD
+>
+>- Il est conseillé d’activer la protection contre suppression accidentelle sur les objets importants.
 
 
 - Lire les propriétés d’un objet
