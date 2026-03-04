@@ -31,21 +31,21 @@
     	- L’émission et la gestion de certificats numériques.
 
 ## Les composants logiques
-> ** implémenter une conception AD DS appropriée pour une organisation **
+>**implémenter une conception AD DS appropriée pour une organisation**
 
-- ** Forêt **
+- **Forêt**
 	- → Regroupement d’un ou plusieurs domaines partageant le même schéma et une relation d’approbation automatique.
 
-- ** Arborescence de domaine (Tree) **
+- **Arborescence de domaine (Tree)**
 	- → Ensemble de domaines partageant un espace de noms DNS contigu au sein d’une même forêt.
 
-- ** Domaine **
+- **Domaine**
 	- → Unité administrative principale contenant des objets (utilisateurs, groupes, ordinateurs) et partageant une base de données commune.
 
-- ** Unité d’organisation (OU) **
+- **Unité d’organisation (OU)**
 	- → Conteneur logique dans un domaine permettant d’organiser les objets et de déléguer l’administration.
 
-- ** Conteneur (Container) **
+- **Conteneur (Container)**
 	- → Objet de stockage par défaut dans un domaine (ex : Users, Computers), moins flexible qu’une OU (pas de délégation fine ni de GPO directe).
 
 - **Schéma**
@@ -54,22 +54,22 @@
 
 - Voici la hiérarchie du plus global au plus spécifique :
 
->FORÊT
->│
->├── Schéma (commun à toute la forêt)
->│
->└── Arborescence de domaine (Tree)
->     │
->     └── Domaine
->          │
->          ├── Unité d’Organisation (OU)
->          │     ├── OU
->          │     │    └── Objets (utilisateurs, groupes, ordinateurs)
->          │     └── Objets
->          │
->          └── Conteneurs par défaut
->                ├── Users
->                └── Computers
+FORÊT
+│
+├── Schéma (commun à toute la forêt)
+│
+└── Arborescence de domaine (Tree)
+     │
+     └── Domaine
+          │
+          ├── Unité d’Organisation (OU)
+          │     ├── OU
+          │     │    └── Objets (utilisateurs, groupes, ordinateurs)
+          │     └── Objets
+          │
+          └── Conteneurs par défaut
+                ├── Users
+                └── Computers
 
 
 ## Les composants physiques 
@@ -99,29 +99,26 @@
 	- → Permet les recherches et l’authentification multi-domaines.
 
 -🔐 6️⃣ Contrôleur de domaine en lecture seule (RODC)
-
 	- DC avec base en lecture seule.
-	→ Utilisé dans les sites distants pour plus de sécurité.
+	- Utilisé dans les sites distants pour plus de sécurité.
 
 
 > 📊 Hiérarchie simplifiée
 
->SITE
->│
->└── Sous-réseau
->      │
->      └── Contrôleurs de domaine
->            ├── DC standard
->            │     ├── Magasin de données (NTDS.dit)
->            │     └── Peut être Catalogue Global
->            │
->            └── RODC
+SITE
+│
+└── Sous-réseau
+      │
+      └── Contrôleurs de domaine
+            ├── DC standard
+            │     ├── Magasin de données (NTDS.dit)
+            │     └── Peut être Catalogue Global
+            │
+            └── RODC
 
 
 
 # Définir les utilisateurs, les groupes et les ordinateurs
-** = objets **
-
 ## Créer des objets utilisateur
 
 ```powershell
@@ -193,38 +190,6 @@ Test-ADServiceAccount gmsa-web
 
 
 
-## 🔹 Schéma du fonctionnement d’un gMSA (Group Managed Service Account)
-
-       ┌───────────────────────────┐
-       │       Active Directory    │
-       │                           │
-       │  ┌─────────────────────┐  │
-       │  │  gMSA : gmsa-web     │  │
-       │  │  Mot de passe géré   │  │
-       │  │  automatiquement     │  │
-       │  └─────────────────────┘  │
-       └─────────────┬─────────────┘
-                     │
-        ┌────────────┴─────────────┐
-        │                          │
-   ┌─────────────┐            ┌─────────────┐
-   │ Serveur 1   │            │ Serveur 2   │
-   │ autorisé    │            │ autorisé    │
-   └─────────────┘            └─────────────┘
-        │                          │
-        │ Utilise le gMSA          │ Utilise le gMSA
-        │ pour démarrer            │ pour démarrer
-        │ les services             │ les services
-        ▼                          ▼
-   ┌─────────────┐            ┌─────────────┐
-   │ Service IIS │            │ Service SQL │
-   │ (ou autre)  │            │ (ou autre)  │
-   └─────────────┘            └─────────────┘
-
-# ✅ Légende
-- Le mot de passe est **géré automatiquement par AD**.
-- Le gMSA peut être utilisé par **plusieurs serveurs autorisés**.
-- Aucun mot de passe à stocker ou modifier manuellement.
 
 ## Comptes de services administrés délégués
 ### 🔹 Définition
@@ -235,9 +200,11 @@ Test-ADServiceAccount gmsa-web
 
 - Très utilisé pour les services distribués (IIS, SQL Server, services web) nécessitant des droits précis sur d’autres machines.
 
+- Le mot de passe est géré automatiquement par AD.
+- Le gMSA peut être utilisé par plusieurs serveurs autorisés.
+- Le mot de passe est géré automatiquement par AD.
 
-
-> Création d’un gMSA délégué (PowerShell)
+>### Création d’un gMSA délégué (PowerShell)
 >> Créer le gMSA avec délégation Kerberos activée :
 ```powershell
 New-ADServiceAccount -Name gmsa-delegue `
@@ -270,16 +237,16 @@ Test-ADServiceAccount gmsa-delegue
 	- Possède un SID (Security Identifier)
 	- Peut être utilisé dans les ACL (listes de contrôle d’accès)
 
-** ✅ Utilisé pour la gestion des droits **
+**✅ Utilisé pour la gestion des droits**
 
 - 2️⃣ Groupe de distribution
 	- Sert uniquement pour les listes de diffusion (email)
 	- Pas utilisable pour attribuer des permissions
 
-** ❌ Pas utilisé pour la sécurité ** 
+**❌ Pas utilisé pour la sécuritée mot de passe est géré automatiquement par AD.
 
-> 🌍 Étendues (Scopes) des groupes
->> Il existe 3 étendues principales :
+### 🌍 Étendues (Scopes) des groupes
+#### Il existe 3 étendues principales :
 
 - 🔹 Groupe Local de Domaine
 	- Utilisé pour donner des droits sur des ressources dans un domaine spécifique
@@ -302,18 +269,18 @@ Test-ADServiceAccount gmsa-delegue
 - DL = Groupes Locaux de Domaine
 - P = Permissions
 
-** 👉 On met les utilisateurs dans des groupes globaux,
+**👉 On met les utilisateurs dans des groupes globaux,
 les groupes globaux dans des groupes locaux de domaine,
 et on attribue les permissions aux groupes locaux.**
 
-> 🎓 Résumé
+### 🎓 Résumé
 
-**  Un objet de groupe est un objet Active Directory permettant de regrouper des comptes afin de gérer les autorisations de manière centralisée et sécurisée.
-Il existe deux types (sécurité, distribution) et trois étendues (global, local de domaine, universel) ** 
+**Un objet de groupe est un objet Active Directory permettant de regrouper des comptes afin de gérer les autorisations de manière centralisée et sécurisée.
+Il existe deux types (sécurité, distribution) et trois étendues (global, local de domaine, universel)** 
 
 ## 💻 Objet Ordinateur
 
-> 🔹 Définition
+### 🔹 Définition
 
 - Un objet ordinateur représente une machine membre du domaine (PC, serveur, poste distant).
 
@@ -321,7 +288,7 @@ Il existe deux types (sécurité, distribution) et trois étendues (global, loca
 
 	- Il peut s’authentifier auprès du domaine et recevoir des stratégies de groupe (GPO).
 
-> 🔹 Caractéristiques principales
+### 🔹 Caractéristiques principales
 
 - Nom de l’ordinateur (doit être unique dans le domaine)
 
@@ -331,7 +298,7 @@ Il existe deux types (sécurité, distribution) et trois étendues (global, loca
 
 - Peut être membre de groupes pour appliquer des droits spécifiques
 
-> 🔹 Rôle dans Active Directory
+### 🔹 Rôle dans Active Directory
 
 - Permet l’authentification machine au domaine (ex. connexion réseau, partages).
 
@@ -339,7 +306,7 @@ Il existe deux types (sécurité, distribution) et trois étendues (global, loca
 
 - Peut être utilisé dans des groupes pour déléguer des droits (ex. accès à des dossiers partagés).
 
-> 🔹 Bonnes pratiques
+### 🔹 Bonnes pratiques
 
 - Placer les objets ordinateur dans des OU spécifiques selon leur rôle ou localisation
 
@@ -347,25 +314,23 @@ Il existe deux types (sécurité, distribution) et trois étendues (global, loca
 
 - Ajouter les ordinateurs aux groupes AD si nécessaire pour la gestion des permissions
 
-> 🔹 Exemple d’usage
+#### 🔹 Exemple d’usage
 
 - Un serveur web WEB01 est ajouté au domaine → il devient un objet ordinateur dans l’OU “Serveurs”
 
 - Les stratégies de sécurité et de déploiement logiciel sont automatiquement appliquées à cet objet.
 
 ## 💻 Conteneur Ordinateurs (Computers Container)
-> 🔹 Définition
+### 🔹 Définition
 
--Cconteneur par défaut dans Active Directory où sont placés les objets ordinateur qui rejoignent un domaine si aucune OU spécifique n’est définie lors de l’ajout.
+-Conteneur par défaut dans Active Directory où sont placés les objets ordinateur qui rejoignent un domaine si aucune OU spécifique n’est définie lors de l’ajout.
 
 	- C’est un objet logique mais non modifiable comme une OU : on ne peut pas lui appliquer directement des stratégies de groupe (GPO) ni déléguer l’administration.
 
-	- Son chemin LDAP par défaut :
-```powershell
-CN=Computers,DC=nomdomaine,DC=com
-```
+	- Son chemin LDAP par défaut : CN=Computers,DC=nomdomaine,DC=com
 
->🔹 Caractéristiques principales
+
+### 🔹 Caractéristiques principales
 
 - Conteneur par défaut pour les ordinateurs du domaine
 
@@ -375,15 +340,16 @@ CN=Computers,DC=nomdomaine,DC=com
 
 - Permet de regrouper tous les ordinateurs non organisés
 
->🔹 Différence entre Conteneur et OU
->> Aspect	Conteneur	Unité d’Organisation (OU)
->> Peut recevoir des GPO	❌ Non	✅ Oui
->> Délégation d’administration	❌ Non	✅ Oui
->> Déplacement d’objets	✅ Oui	✅ Oui
->> Création par défaut	✅ Oui (Computers, Users)	❌ Non, à créer selon besoin
+### 🔹 Différence entre Conteneur et OU
 
+| Aspect                      | Conteneur | Unité d'organisation |
+|-----------------------------|-----------|----------------------|
+| Peut recevoir des GPO       | ❌ Non     | ✅ Oui                |
+| Délégation d'administration | ✅ Oui     | ✅ Oui                |
+| Déplacement d'objets        | ✅ Oui     | ✅ Oui                |
+| Création par défault        | ✅ Oui     | ❌ Non                |
 
->🔹 Bonnes pratiques
+### 🔹 Bonnes pratiques
 
 - Déplacer les objets ordinateur depuis le conteneur Computers vers des OU spécifiques selon leur rôle ou site
 
@@ -391,7 +357,7 @@ CN=Computers,DC=nomdomaine,DC=com
 
 - Appliquer les GPO sur les OU et non sur le conteneur par défaut
 
-> 🔹 Exemple
+### 🔹 Exemple
 
 - Un PC “PC01” rejoint le domaine → placé par défaut dans CN=Computers
 
@@ -409,7 +375,7 @@ OU=PostesClients,DC=entreprise,DC=local
 
 # Définir les forêts et les domaines AD DS
 ## 🌳 1️⃣ Domaine (Domain)
-> 🔹 Définition
+### 🔹 Définition
 
 - Un domaine est l’unité administrative principale dans Active Directory.
 
@@ -419,7 +385,7 @@ OU=PostesClients,DC=entreprise,DC=local
 
 	- Possède une politique de sécurité unique et des relations de confiance avec d’autres domaines
 
-- 🔹 Caractéristiques
+### 🔹 Caractéristiques
 
 	- Nom DNS unique (ex. entreprise.local)
 
@@ -451,7 +417,7 @@ OU=PostesClients,DC=entreprise,DC=local
 
 
 ## 🌲 2️⃣ Forêt (Forest)
->  🔹 Définition
+###  🔹 Définition
 
 - Une forêt est un regroupement de un ou plusieurs domaines qui partagent :
 
@@ -461,24 +427,23 @@ OU=PostesClients,DC=entreprise,DC=local
 
 	- Les relations de confiance implicites entre domaines
 
-> Les objets suivants existent dans le domaine racine de la forêt :
+#### Les objets suivants existent dans le domaine racine de la forêt :
 
    -  Le rôle de contrôleur de schéma.
    -  Le rôle de maître d’attribution des noms de domaine.
    -  Le groupe Administrateurs de l’entreprise.
    -  Le groupe Administrateurs du schéma.
 
->Une forêt AD DS est souvent décrite comme suit :
+#### Une forêt AD DS est souvent décrite comme suit :
 
    -  Une limite de sécurité. Par défaut, aucun utilisateur en dehors de la forêt ne peut accéder aux ressources de la forêt. En outre, tous les domaines d’une forêt approuvent automatiquement les autres domaines de la forêt. Cela permet d’activer facilement l’accès aux ressources pour tous les utilisateurs d’une forêt, quel que soit le domaine auquel ils appartiennent.
    -  Une limite de réplication. Une forêt AD DS est la limite de réplication pour les partitions de schéma et de configuration dans la base de données AD DS. Par conséquent, les organisations qui souhaitent déployer des applications avec des schémas incompatibles doivent déployer des forêts supplémentaires. La forêt est également la limite de réplication pour le catalogue global. Le catalogue global permet de trouver des objets de n’importe quel domaine de la forêt.
 
 
 
->Conseil
+#### Conseil
 
 - En règle générale, une organisation ne crée qu’une seule forêt.
-
 
 - Les objets suivants existent dans chaque domaine (y compris la racine de la forêt) :
 
@@ -489,7 +454,7 @@ OU=PostesClients,DC=entreprise,DC=local
 
 
 
-> 🔹 Caractéristiques
+#### 🔹 Caractéristiques
 
 - Plus global que le domaine
 
@@ -497,35 +462,35 @@ OU=PostesClients,DC=entreprise,DC=local
 
 - Chaque forêt a un schéma unique, qui définit tous les objets et attributs de tous les domaines de la forêt
 
-> 🔹 Exemple
+- 🔹 Exemple
 
-- Forêt : entreprise.local
+	- Forêt : entreprise.local
 
-- Contient :
+	- Contient :
 
-	- Domaine entreprise.local (domaine racine)
+		- Domaine entreprise.local (domaine racine)
 
-	- Domaine sales.entreprise.local
+		- Domaine sales.entreprise.local
 
-	- Domaine it.entreprise.local
+		- Domaine it.entreprise.local
 
 Tous les domaines partagent le même schéma et catalogue global
 
 
-> Cas pratique 
+#### Cas pratique 
 
 - Dans Active Directory Domain Services (AD DS), on ne « crée pas une forêt » directement sur un serveur via PowerShell tant que le rôle AD DS n’est pas installé. La création d’une forêt se fait lors de l’installation du rôle AD DS et de la promotion du serveur en contrôleur de domaine racine.
 
 - Voici les étapes et commandes PowerShell pour créer une forêt :
 
-	- 1. Installer le rôle AD DS
+> Installer le rôle AD DS
 
 ```powershell
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 ```
 - -IncludeManagementTools → installe les outils comme ADUC et PowerShell module.
 
-	- 2. Créer une nouvelle forêt (Promotion du serveur)
+> Créer une nouvelle forêt (Promotion du serveur)
 
 ```powershell
 Install-ADDSForest `
@@ -538,24 +503,24 @@ Install-ADDSForest `
 -SysvolPath "C:\Windows\SYSVOL" `
 -Force:$true
 ```
-> 🔹 Paramètres importants :
-- Paramètre	Description
-- -DomainName	Nom DNS complet du domaine racine de la forêt
-- -DomainNetbiosName	Nom NetBIOS du domaine (court)
-- -InstallDNS	Installe et configure le serveur DNS si nécessaire
-- -DatabasePath	Chemin du fichier NTDS.dit (base AD)
-- -LogPath	Chemin des journaux de la base AD
-- -SysvolPath	Chemin du dossier SYSVOL pour scripts et GPO
-- -Force:$true	Supprime les confirmations interactives
+- 🔹 Paramètres importants :
+	- Paramètre	Description
+	- -DomainName	Nom DNS complet du domaine racine de la forêt
+	- -DomainNetbiosName	Nom NetBIOS du domaine (court)
+	- -InstallDNS	Installe et configure le serveur DNS si nécessaire
+	- -DatabasePath	Chemin du fichier NTDS.dit (base AD)
+	- -LogPath	Chemin des journaux de la base AD
+	- -SysvolPath	Chemin du dossier SYSVOL pour scripts et GPO
+	- -Force:$true	Supprime les confirmations interactives
 
 
-	- 3.  Redémarrage automatique
+> Redémarrage automatique
 
 - Après l’exécution de Install-ADDSForest, PowerShell demandera de redémarrer le serveur pour compléter l’installation.
 
 - Une fois redémarré, le serveur devient le contrôleur de domaine racine de la nouvelle forêt.
 
-** ⚠️ Notes importantes **
+**⚠️ Notes importantes**
 
 - Vous ne pouvez créer qu’une seule forêt par serveur en promotion initiale.
 
@@ -565,8 +530,8 @@ Install-ADDSForest `
 
 
 
-## les relations d’approbation 
->🔹 Définition
+## Les relations d’approbation 
+### 🔹 Définition
 
 - Une relation d’approbation (ou trust) est un lien logique entre deux domaines ou forêts qui permet aux utilisateurs d’un domaine (ou d’une forêt) d’accéder aux ressources d’un autre domaine sans avoir à créer de comptes supplémentaires.
 
@@ -574,7 +539,7 @@ Install-ADDSForest `
 
 	- Active Directory utilise ces relations pour authentifier et autoriser les utilisateurs entre domaines.
 
->🔹 Types de relations d’approbation
+### 🔹 Types de relations d’approbation
 - Approvisionnement automatique (implicite)
 	- Parent → enfant dans une arborescence de domaine
 	- Créée automatiquement lors de la création d’un domaine enfant
@@ -599,7 +564,7 @@ Install-ADDSForest `
 | Non transitif | La confiance est limitée aux deux domaines directement concernés              |
 
 
-> les principaux types d’approbations.
+### les principaux types d’approbations.
 
 | Type d’approbation            | Description                  | Sens                            | Description                                                                                                                                                                                                                                                                                       |
 |-------------------------------|------------------------------|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -611,10 +576,10 @@ Install-ADDSForest `
 | Raccourci                     | Non transitive               | Sens unique ou bidirectionnelle | Configurez des raccourcis d’approbations pour réduire le temps  nécessaire à l’authentification entre des domaines AD DS qui se trouvent  dans différentes parties d’une forêt AD DS. Par défaut, il n’existe pas  de raccourcis d’approbations, un administrateur doit les créer si  nécessaire. |
 
 
-** Quand vous configurez des approbations entre des domaines dans la même forêt, entre des forêts ou pour un domaine externe, Windows Server crée un objet de domaine approuvé pour stocker les informations de l’approbation, telles que la transitivité et le type, dans AD DS. Windows Server stocke cet objet de domaine approuvé dans le conteneur Système de AD DS.**
+**Quand vous configurez des approbations entre des domaines dans la même forêt, entre des forêts ou pour un domaine externe, Windows Server crée un objet de domaine approuvé pour stocker les informations de l’approbation, telles que la transitivité et le type, dans AD DS. Windows Server stocke cet objet de domaine approuvé dans le conteneur Système de AD DS**
 
 
-> 🔹 Points clés
+#### 🔹 Points clés
 
 - Les relations d’approbation ne transfèrent pas les droits automatiquement → elles permettent seulement l’authentification inter-domaines.
 - Les permissions doivent toujours être attribuées aux groupes ou ressources.
@@ -622,20 +587,20 @@ Install-ADDSForest `
 
 
 ## 🗂️ Unité d’Organisation (OU)
->🔹 Définition
+### 🔹 Définition
 
 - Une unité d’organisation (OU) est un conteneur logique dans Active Directory qui permet de regrouper des objets (utilisateurs, groupes, ordinateurs, autres OU) pour faciliter la gestion administrative et la délégation de contrôle.
 	- Elle est utilisée pour organiser les objets selon différents critères : service, rôle, localisation, fonction, etc.
 	- Contrairement aux conteneurs par défaut (Users, Computers), une OU permet l’application de stratégies de groupe (GPO) et la délégation d’administration.
 
->🔹 Caractéristiques principales
+### 🔹 Caractéristiques principales
 
 - Peut contenir des objets et des sous-OU.
 - Permet la délégation d’administration sans donner de droits sur tout le domaine.
 - Supporte l’application de GPO pour configurer automatiquement les ordinateurs et utilisateurs.
 - N’est pas créée automatiquement pour chaque rôle : il faut la définir selon la structure organisationnelle.
 
->🔹 Bonnes pratiques
+### 🔹 Bonnes pratiques
 
 - Créer des OU logiques selon les besoins de l’entreprise (ex. OU=Marketing, OU=IT, OU=Serveurs).
 - Éviter de mélanger trop d’objets différents dans la même OU.
@@ -650,13 +615,12 @@ Install-ADDSForest `
 - Avantage : appliquer une GPO “paramètres sécurité” uniquement sur cette OU, ou déléguer l’administration à un responsable marketing sans toucher aux autres OU.
 
 
-### créer une Unité d’Organisation (OU)
+### Créer une Unité d’Organisation (OU)
 > Importer le module Active Directory
-- Avant tout, assurez-vous que le module AD est disponible :
 ```powsershell
 Import-Module ActiveDirectory
 ```
->> Ce module est installé automatiquement si le rôle RSAT-AD ou AD DS Tools est présent.
+- Ce module est installé automatiquement si le rôle RSAT-AD ou AD DS Tools est présent.
 
 > Créer une nouvelle OU
 ```powsershell
@@ -693,43 +657,15 @@ New-ADUser -Name "Jean Dupont" -SamAccountName jdupont `
 -Enabled $true
 ```
 
-> ✅ Bonnes pratiques
+- ✅ Bonnes pratiques
 
-- Organiser les OU selon les services, rôles ou sites.
-- Activer la protection contre suppression accidentelle pour les OU importantes.
-- Appliquer des GPO au niveau de l’OU, pas dans le conteneur par défaut Computers.
+	- Organiser les OU selon les services, rôles ou sites.
+	- Activer la protection contre suppression accidentelle pour les OU importantes.
+	- Appliquer des GPO au niveau de l’OU, pas dans le conteneur par défaut Computers.
+	- 🌐 Processus PowerShell pour créer une OU et gérer des objets dans AD DS
 
 
-> 🌐 Processus PowerShell pour créer une OU et gérer des objets dans AD DS
-
-DOMAINE : entreprise.local
-│
-└── OU = Marketing  ← Créée via PowerShell
-     │
-     ├─ Création de l’OU
-     │   ```powershell
-     │   New-ADOrganizationalUnit -Name "Marketing" -Path "DC=entreprise,DC=local" -ProtectedFromAccidentalDeletion $true
-     │   ```
-     │
-     ├─ Ajouter des utilisateurs
-     │   ```powershell
-     │   New-ADUser -Name "Jean Dupont" -SamAccountName jdupont `
-     │   -UserPrincipalName jdupont@entreprise.local `
-     │   -Path "OU=Marketing,DC=entreprise,DC=local" `
-     │   -AccountPassword (Read-Host -AsSecureString "Mot de passe") `
-     │   -Enabled $true
-     │   ```
-     │
-     ├─ Ajouter des ordinateurs
-     │   ```powershell
-     │   New-ADComputer -Name "PC01" -Path "OU=Marketing,DC=entreprise,DC=local"
-     │   ```
-     │
-     └─ Appliquer GPO à l’OU
-         - Exemple : Stratégie de sécurité ou déploiement logiciel
-         - GPO lié à "OU=Marketing" dans ADUC ou via PowerShell
-
->> ✅ Résumé
+### ✅ Résumé
 1. Créer l’OU avec `New-ADOrganizationalUnit`  
 2. Ajouter utilisateurs (`New-ADUser`) et ordinateurs (`New-ADComputer`) dans l’OU  
 3. Appliquer GPO au niveau de l’OU  
@@ -737,14 +673,14 @@ DOMAINE : entreprise.local
 
 
 ## 📦 Conteneurs génériques (Generic Containers)
->🔹 Définition
+### 🔹 Définition
 
 - Un conteneur générique est un objet de type conteneur dans Active Directory qui sert à regrouper d’autres objets AD (utilisateurs, ordinateurs, groupes, etc.) sans disposer des fonctionnalités complètes d’une unité d’organisation (OU).
 	- Ils sont créés par défaut par AD pour organiser certains types d’objets.
 	- Contrairement aux OU, on ne peut pas leur appliquer directement de GPO et ils ne permettent pas la délégation d’administration.
 	- Exemple : les conteneurs par défaut Users et Computers.
 
-> 🔹 Caractéristiques principales
+### 🔹 Caractéristiques principales
 
 	- Conteneur logique uniquement (pas d’administration avancée)
 	- Fonctionnalités de gestion limitées
@@ -752,7 +688,7 @@ DOMAINE : entreprise.local
 	- Ne peut pas recevoir de stratégies de groupe (GPO)
 	- Ne permet pas de délégation de contrôle fine
 
-> Les objets ci-dessous sont affichés par défaut
+#### Les objets ci-dessous sont affichés par défaut
 
 - Domaine. Le niveau supérieur de la hiérarchie de l’organisation du domaine.
 - Conteneur Builtin. Un conteneur qui stocke plusieurs groupes par défaut.
@@ -762,7 +698,7 @@ DOMAINE : entreprise.local
 - Conteneur Utilisateurs. L’emplacement par défaut pour les nouveaux comptes utilisateur et groupes que vous créez dans le domaine. Le conteneur Utilisateurs contient également l’administrateur, les comptes invités pour le domaine et certains groupes par défaut.
 - UO de contrôleurs de domaine. L’emplacement par défaut pour les comptes d’ordinateur des contrôleurs de domaine. Il s’agit de la seule UO présente dans une nouvelle installation de AD DS.
 
-> Les objets qui sont masqués par défaut.
+#### Les objets qui sont masqués par défaut.
 
 | Object               | Description                                                                                                                                           |
 |----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -775,29 +711,29 @@ DOMAINE : entreprise.local
 
 
 
-> Remarque
+- Remarque
 
-** Les objets de stratégie de groupe ne peuvent pas être liés à des conteneurs dans un domaine AD DS. Pour lier des objets de stratégie de groupe dans le but d’appliquer des configurations et des restrictions, créez une hiérarchie d’unités d’organisation, puis liez-les aux objets de stratégie de groupe.**
-
-
+**Les objets de stratégie de groupe ne peuvent pas être liés à des conteneurs dans un domaine AD DS. Pour lier des objets de stratégie de groupe dans le but d’appliquer des configurations et des restrictions, créez une hiérarchie d’unités d’organisation, puis liez-les aux objets de stratégie de groupe**
 
 
-> 🔹 Bonnes pratiques
 
-- Déplacer les objets des conteneurs génériques vers des OU créées par	 l’administrateur pour bénéficier de GPO et de délégation.
-- Ne pas appliquer de stratégies directement sur les conteneurs génériques (impossible).
-- Les conteneurs servent surtout à l’organisation initiale des objets.
 
-> Exemple concret
+- 🔹 Bonnes pratiques
 
-- Un PC rejoint le domaine → placé par défaut dans Computers
-- Un utilisateur est créé sans OU spécifiée → placé dans Users
-- Pour appliquer des stratégies de sécurité, déplacer les objets vers des OU spécifiques comme `OU=PostesClients ou OU=Marketing`.
+	- Déplacer les objets des conteneurs génériques vers des OU créées par	 l’administrateur pour bénéficier de GPO et de délégation.
+	- Ne pas appliquer de stratégies directement sur les conteneurs génériques (impossible).
+	- Les conteneurs servent surtout à l’organisation initiale des objets.
+
+- Exemple concret
+
+	- Un PC rejoint le domaine → placé par défaut dans Computers
+	- Un utilisateur est créé sans OU spécifiée → placé dans Users
+	- Pour appliquer des stratégies de sécurité, déplacer les objets vers des OU spécifiques comme `OU=PostesClients ou OU=Marketing`.
 
 
 
 ## 🌳 Conception hiérarchique dans AD DS
->🔹 Définition
+### 🔹 Définition
 
 - Une conception hiérarchique consiste à organiser les objets et domaines d’Active Directory selon une structure logique reflétant l’organisation de l’entreprise, afin de faciliter :
 	- La gestion des utilisateurs, ordinateurs et ressources
@@ -805,7 +741,7 @@ DOMAINE : entreprise.local
 	- La délégation d’administration
 	- La réplication et la sécurité
 
->🔹 Principes de la hiérarchie
+### 🔹 Principes de la hiérarchie
 
 - Forêt (Forest)
 	- Niveau le plus global
@@ -825,38 +761,24 @@ DOMAINE : entreprise.local
 	- Niveau le plus spécifique de la hiérarchie
 	- Placés dans les OU pour bénéficier de stratégies et d’administration déléguée
 
->🔹 Avantages d’une conception hiérarchique
->
->>✅ Clarté : structure reflète l’organisation réelle (services, sites, fonctions)
->
->>✅ Sécurité : délégation fine sans donner de droits sur tout le domaine
->
->>✅ Gestion simplifiée : groupes, OU et GPO appliqués de manière ciblée
->
->>✅ Réduction des conflits : noms, stratégies et permissions organisés logiquement
->
->>✅ Évolutivité : facile d’ajouter de nouveaux domaines, OU ou objets
+#### 🔹 Avantages d’une conception hiérarchique
 
-> Exemple concret
-FORÊT : entreprise.local
-│
-├── Domaine : entreprise.local (racine)
-│    ├── OU : IT
-│    │    ├── OU : PostesClients
-│    │    └── OU : Serveurs
-│    ├── OU : Marketing
-│    └── OU : RH
-│
-└── Domaine enfant : sales.entreprise.local
-     ├── OU : EquipeVentes
-     └── OU : Administratif
+>✅ Clarté : structure reflète l’organisation réelle (services, sites, fonctions)
+>
+>✅ Sécurité : délégation fine sans donner de droits sur tout le domaine
+>
+>✅ Gestion simplifiée : groupes, OU et GPO appliqués de manière ciblée
+>
+>✅ Réduction des conflits : noms, stratégies et permissions organisés logiquement
+>
+>✅ Évolutivité : facile d’ajouter de nouveaux domaines, OU ou objets
 
 
-> La création d’une forêt, de domaines, d’OU et d’objets
->> 🌐 Conception hiérarchique AD DS avec PowerShell
 
-- Forêt et Domaine racine
-- Création de la forêt (nouveau domaine racine)
+### La création d’une forêt, de domaines, d’OU et d’objets
+#### 🌐 Conception hiérarchique AD DS avec PowerShell
+
+> Création de la forêt (nouveau domaine racine)
 ```powershell
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
@@ -873,9 +795,9 @@ Install-ADDSForest `
 	- Résultat → Domaine racine : `entreprise.local`  
 	- Serveur devient **contrôleur de domaine (DC)**  
 
----
 
->>  Créer une OU dans le domaine racine
+
+>  Créer une OU dans le domaine racine
 ```powershell
 New-ADOrganizationalUnit -Name "IT" -Path "DC=entreprise,DC=local" -ProtectedFromAccidentalDeletion $true
 New-ADOrganizationalUnit -Name "Marketing" -Path "DC=entreprise,DC=local" -ProtectedFromAccidentalDeletion $true
@@ -884,9 +806,9 @@ New-ADOrganizationalUnit -Name "Marketing" -Path "DC=entreprise,DC=local" -Prote
 	- OU = conteneurs logiques pour les objets  
 	- Protection contre suppression accidentelle activée  
 
----
 
->>  Ajouter des objets dans les OU
+
+>  Ajouter des objets dans les OU
 
 - Ajouter un utilisateur
 ```powershell
@@ -897,14 +819,13 @@ New-ADUser -Name "Jean Dupont" -SamAccountName jdupont `
 -Enabled $true
 ```
 
->> Ajouter un ordinateur
+> Ajouter un ordinateur
 ```powershell
 New-ADComputer -Name "PC01" -Path "OU=IT,DC=entreprise,DC=local"
 ```
 
 ---
-
-> Arborescence hiérarchique
+#### Arborescence hiérarchique
 
 ```
 FORÊT : entreprise.local
@@ -924,7 +845,7 @@ FORÊT : entreprise.local
 
 ---
 
-> ✅ Points clés
+#### ✅ Points clés
 
 1. **Forêt → Domaine racine → OU → Objets**  
 2. Utiliser **PowerShell** pour automatiser la création et éviter les erreurs  
@@ -968,7 +889,7 @@ New-ADComputer -Name "PC01" -Path "OU=IT,DC=entreprise,DC=local"
 New-ADGroup -Name "Marketing" -GroupScope Global -GroupCategory Security `
 -Path "OU=Marketing,DC=entreprise,DC=local"
 ```
->
+
 > Modifier un objet
 ```powershell
 Set-ADUser -Identity jdupont `
@@ -976,18 +897,21 @@ Set-ADUser -Identity jdupont `
 -Department "IT"
 ```
 >
->>- -Identity → identifie l’objet (nom, SamAccountName, ou DN)
+>>- Identity → identifie l’objet (nom, SamAccountName, ou DN)
 >
 >>- On peut modifier nom, titre, département, description, manager, mot de passe, etc.
->
+
+
+
 >Déplacer un objet
 ```powershell
 Move-ADObject -Identity "CN=Jean Dupont,OU=IT,DC=entreprise,DC=local" `
 -TargetPath "OU=Marketing,DC=entreprise,DC=local"
 ```
 >
-> -Permet de réorganiser les objets dans d’autres OU ou conteneurs.
->
+>>- Permet de réorganiser les objets dans d’autres OU ou conteneurs.
+
+
 >Supprimer un objet
 ```powershell
 Remove-ADUser -Identity jdupont
@@ -995,29 +919,16 @@ Remove-ADComputer -Identity PC01
 Remove-ADGroup -Identity "Marketing"
 ```
 >
->>Supprime l’objet et ses références dans AD
+>>- Supprime l’objet et ses références dans AD
 >
->>Il est conseillé d’activer la protection contre suppression accidentelle sur les objets importants.
->
+>>- Il est conseillé d’activer la protection contre suppression accidentelle sur les objets importants.
+
+
 >Lire les propriétés d’un objet
 ```powershell
 Get-ADUser -Identity jdupont -Properties *
 ```
-
-
-
-
-### Centre d'administration Active Directory
-
--  la gestion des objets AD DS 
-- Taches : 
-
-> Création et gestion des comptes d’utilisateurs, d’ordinateurs et de groupes.
-
-
-
-
-
+---
 
 > Création et gestion des UO.
 >
@@ -1033,31 +944,35 @@ New-ADOrganizationalUnit -Name "IT" `
 -Description "OU du service IT" `
 -ProtectedFromAccidentalDeletion $true
 ```
->
->>Exemple : pour créer une OU “Marketing” dans le même domaine :
+---
+- Exemple : pour créer une OU “Marketing” dans le même domaine :
 ```powershell
 New-ADOrganizationalUnit -Name "Marketing" -Path "DC=entreprise,DC=local" -ProtectedFromAccidentalDeletion $true
 ```
->
->>Modifier une OU
+---
+
+>Modifier une OU
 >
 >> - Modifier par exemple la description ou le nom :
 >
 ```powershell
 Set-ADOrganizationalUnit -Identity "OU=IT,DC=entreprise,DC=local" `
 -Description "OU modifiée pour le service IT"```
+
+
+> Déplacer une OU ou ses objets
 >
->> Déplacer une OU ou ses objets
->
->> -Déplacer un objet (utilisateur, ordinateur, groupe) dans une OU :
+>>- Déplacer un objet (utilisateur, ordinateur, groupe) dans une OU :
 ```powershell
 Move-ADObject -Identity "CN=Jean Dupont,OU=OldOU,DC=entreprise,DC=local" `
 -TargetPath "OU=IT,DC=entreprise,DC=local"
 ```
 >
 >> - Permet de réorganiser les objets dans une structure hiérarchique logique.
->
->>Supprimer une OU
+
+
+
+>Supprimer une OU
 ```powershell
 Remove-ADOrganizationalUnit -Identity "OU=Marketing,DC=entreprise,DC=local" -Recursive
 ```
@@ -1065,14 +980,18 @@ Remove-ADOrganizationalUnit -Identity "OU=Marketing,DC=entreprise,DC=local" -Rec
 >> - -Recursive → supprime également tous les objets contenus dans l’OU
 >
 >> - Veiller à utiliser la protection contre suppression accidentelle pour les OU critiques
->
->>Lire les propriétés d’une OU
+
+
+
+
+
+>Lire les propriétés d’une OU
 ```powershell
 Get-ADOrganizationalUnit -Identity "OU=IT,DC=entreprise,DC=local" -Properties *
 ```
 
 
-> Résumé visuel PowerShell pour OU
+####  Résumé visuel PowerShell pour OU
 ```powershell 
 OU = IT
 ├─ Créer : New-ADOrganizationalUnit -Name "IT" -Path "DC=entreprise,DC=local"
@@ -1092,16 +1011,16 @@ OU = IT
 
 
 
-> Gestion et connexion à plusieurs domaines au sein d’une instance unique du Centre d’administration Active Directory.
->
->>Connexion à Active Directory
+###  Gestion et connexion à plusieurs domaines au sein d’une instance unique du Centre d’administration Active Directory.
+
+>Connexion à Active Directory
 ```powershell
 Import-Module ActiveDirectory
 ```
+
 > Se connecter à un domaine spécifique
 >
->> - Pour exécuter des commandes sur un domaine particulier, utilisez -Server ou -DomainController :
->
+>> - Pour exécuter des commandes sur un domaine particulier, utilisez -Server ou -DomainController :>
 ```powershell 
 #### Se connecter au contrôleur de domaine DC01.domaine1.local
 Get-ADUser -Filter * -Server "DC01.domaine1.local"
@@ -1112,8 +1031,9 @@ Get-ADUser -Filter * -Server "DC01.domaine1.local"
 #### Utiliser le domaine domaine2.local
 Get-ADComputer -Filter * -Server "domaine2.local"
 ```
->
->>Gestion de plusieurs domaines
+
+
+>Gestion de plusieurs domaines
 >
 >> - 🔹 Exécuter une commande sur plusieurs domaines
 ```powershell
@@ -1125,27 +1045,30 @@ foreach ($DC in $DomainControllers) {
 ```
 >
 >> - foreach permet de parcourir plusieurs domaines et récupérer les objets AD.
->
->> 🔹 Spécifier des informations d’identification pour un autre domaine
+
+
+> 🔹 Spécifier des informations d’identification pour un autre domaine
 ```powershell 
 $Cred = Get-Credential
 Get-ADUser -Filter * -Server "DC01.domaine2.local" -Credential $Cred
 ```
 >
 >> - Permet de se connecter avec un compte d’administrateur de ce domaine, si différent de votre domaine actuel.
+
+
+> Gérer des objets sur plusieurs domaines
 >
->> Gérer des objets sur plusieurs domaines
+>>- Exemple : déplacer un utilisateur dans un autre domaine
 >
->> - Exemple : déplacer un utilisateur dans un autre domaine
->
->>PowerShell ne peut pas déplacer directement un objet entre domaines, mais vous pouvez :
->
->> 1. Exporter l’objet depuis le domaine source :
+>- PowerShell ne peut pas déplacer directement un objet entre domaines, mais vous pouvez :
+
+
+> 1. Exporter l’objet depuis le domaine source :
 ```powershell 
 Get-ADUser -Identity "JeanDupont" -Server "DC01.domaine1.local" -Properties * | Export-Csv "JeanDupont.csv" -NoTypeInformation
 ```
 >
->> 2. Créer l’objet dans le domaine cible :
+> 2. Créer l’objet dans le domaine cible :
 ```powershell
 Import-Csv "JeanDupont.csv" | ForEach-Object {
     New-ADUser -Name $_.Name -SamAccountName $_.SamAccountName `
@@ -1154,20 +1077,19 @@ Import-Csv "JeanDupont.csv" | ForEach-Object {
 }
 ```
 >
->> 3. Supprimer l’objet dans le domaine source si nécessaire :
+> 3. Supprimer l’objet dans le domaine source si nécessaire :
 ```powershell
 Remove-ADUser -Identity "JeanDupont" -Server "DC01.domaine1.local"
 ```
 
->  Bonnes pratiques
+-  Bonnes pratiques
+	- Toujours spécifier le serveur ou le domaine lorsqu’on gère plusieurs domaines.
+	- Utiliser Get-Credential pour travailler avec des comptes ayant les droits nécessaires.
+	- Automatiser avec foreach pour exécuter des cmdlets sur plusieurs domaines.
+	- Documenter vos actions lorsque vous manipulez des objets entre domaines pour éviter des pertes de données.
 
-- Toujours spécifier le serveur ou le domaine lorsqu’on gère plusieurs domaines.
-- Utiliser Get-Credential pour travailler avec des comptes ayant les droits nécessaires.
-- Automatiser avec foreach pour exécuter des cmdlets sur plusieurs domaines.
-- Documenter vos actions lorsque vous manipulez des objets entre domaines pour éviter des pertes de données.
 
-
-> Résumé 
+#### Résumé 
 
 | Action                                          | Cmdlet                                | Exemple                                              |
 |-------------------------------------------------|---------------------------------------|------------------------------------------------------|
@@ -1178,14 +1100,14 @@ Remove-ADUser -Identity "JeanDupont" -Server "DC01.domaine1.local"
 | Exporter / importer pour multi-domaines         | Export-Csv / Import-Csv               | Voir exemple ci-dessus                               |
 
 
-> Recherche et filtrage des données AD DS en générant des requêtes.
->
->>Importer le module Active Directory
+#### Recherche et filtrage des données AD DS en générant des requêtes.
+
+#### Importer le module Active Directory
 ```powershell
 Import-Module ActiveDirectory
 ```
->
->> Rechercher tous les objets d’un type
+
+####  Rechercher tous les objets d’un type
 ```powershell
 Get-ADUser -Filter *
 ```
@@ -1195,10 +1117,10 @@ Get-ADUser -Filter *
 >>-Pour les ordinateurs : Get-ADComputer -Filter *
 >
 >>-Pour les groupes : Get-ADGroup -Filter *
->
->> Filtrage avec des attributs spécifiques
->
->>- 🔹 Exemple : trouver un utilisateur précis
+
+#### Filtrage avec des attributs spécifiques
+
+>- 🔹 Exemple : trouver un utilisateur précis
 ```powershell
 Get-ADUser -Filter "SamAccountName -eq 'jdupont'"
 ```
@@ -1207,20 +1129,23 @@ Get-ADUser -Filter "SamAccountName -eq 'jdupont'"
 >
 >>-Comparateurs possibles : -eq (égal), -ne (différent), -like (contient avec wildcard *), -notlike, -gt, -lt.
 >
->>🔹 Exemple : filtrer par département
+
+
+#### 🔹 Exemple : filtrer par département
 ```powershell
 Get-ADUser -Filter "Department -eq 'IT'" -Properties Title, Department
 ```
 >
 >>--Properties → permet de récupérer des attributs supplémentaires pour filtrer ou afficher.
->
->>🔹 Exemple : filtrer par titre contenant “Manager”
+
+
+#### 🔹 Exemple : filtrer par titre contenant “Manager”
 ```powershell
 Get-ADUser -Filter "Title -like '*Manager*'" -Properties Title
 ```
->
->> Combiner plusieurs conditions
->
+
+#### Combiner plusieurs conditions
+
 >>- 🔹 ET logique
 ```powershell 
 Get-ADUser -Filter "Department -eq 'IT' -and Enabled -eq $true"
@@ -1230,32 +1155,31 @@ Get-ADUser -Filter "Department -eq 'IT' -and Enabled -eq $true"
 ```powershell
 Get-ADUser -Filter "Department -eq 'IT' -or Department -eq 'Marketing'"
 ```
->
->> Trier et sélectionner des propriétés
->
->>-🔹 Sélectionner des colonnes spécifiques
+
+### Trier et sélectionner des propriétés
+
+#### 🔹 Sélectionner des colonnes spécifiques
 ```powershell
 Get-ADUser -Filter * -Properties SamAccountName, Department, Title |
 Select-Object SamAccountName, Department, Title
 ```
->
->>- 🔹 Trier par nom ou département
+
+#### 🔹 Trier par nom ou département
 ```powershell
 Get-ADUser -Filter * -Properties Department |
 Sort-Object Department, Name
 ```
->
->>  Requête avancée avec LDAPFilter
+
+####  Requête avancée avec LDAPFilter
 ```powershell
 #### Tous les utilisateurs activés dont le titre contient Manager
 Get-ADUser -LDAPFilter "(&(objectClass=user)(objectCategory=person)(title=*Manager*)(enabled=TRUE))"
 ```
+>--LDAPFilter → syntaxe LDAP standard, souvent plus performante pour de grands domaines.
 >
->>--LDAPFilter → syntaxe LDAP standard, souvent plus performante pour de grands domaines.
->
->>  Exporter les résultats
->
->>- Pour analyse ou reporting :
+
+####  Exporter les résultats
+>- Pour analyse ou reporting :
 ```powsershell
 Get-ADUser -Filter * -Properties SamAccountName, Department, Title |
 Select-Object SamAccountName, Department, Title |
@@ -1264,7 +1188,8 @@ Export-Csv "C:\ADUsers.csv" -NoTypeInformation
 
 
 
-> Résumé
+#### Résumé
+
 | Action                  | Cmdlet                            | Exemple                                                      |
 |-------------------------|-----------------------------------|--------------------------------------------------------------|
 | Lister les utilisateurs | Get-ADUser -Filter * -Server <DC> | Get-ADUser -Filter * -Server DC01.domaine2.local             |
@@ -1275,16 +1200,16 @@ Export-Csv "C:\ADUsers.csv" -NoTypeInformation
 | Exporter                | Export-Csv                        | Export-Csv "C:\ADUsers.csv"                                  |
 
 
-> Création et gestion des stratégies de mot de passe affinées.
->
->>Pré-requis 
+#### Création et gestion des stratégies de mot de passe affinées.
+
+>- Pré-requis 
 ```powershell
 Import-Module ActiveDirectory
 ```
->
->> Créer une stratégie de mot de passe affinée
->
->>-Cmdlet principale :New-ADFineGrainedPasswordPolicy
+
+#### Créer une stratégie de mot de passe affinée
+
+>-Cmdlet principale :New-ADFineGrainedPasswordPolicy
 ```powershell
 New-ADFineGrainedPasswordPolicy `
 -Name "PSO_IT_Strict" `
@@ -1299,10 +1224,10 @@ New-ADFineGrainedPasswordPolicy `
 -LockoutObservationWindow (New-TimeSpan -Minutes 30) `
 -LockoutDuration (New-TimeSpan -Minutes 30)
 ```
->
->> Appliquer la stratégie à un groupe ou utilisateur
->
->>- On utilise :
+
+####  Appliquer la stratégie à un groupe ou utilisateur
+
+>- On utilise :
 ```powershell
 Add-ADFineGrainedPasswordPolicySubject
 ```
@@ -1313,223 +1238,259 @@ Add-ADFineGrainedPasswordPolicySubject `
 -Identity "PSO_IT_Strict" `
 -Subjects "Groupe_IT"
 ```
->
->> Voir les stratégies existantes
+
+#### Voir les stratégies existantes
 ```powsershell
 Get-ADFineGrainedPasswordPolicySubject -Identity "PSO_IT_Strict"
 ```
->
->> Vérifier la stratégie effective pour un utilisateur
+
+#### Vérifier la stratégie effective pour un utilisateur
 ```powershell
 Get-ADUserResultantPasswordPolicy -Identity jdupont
 ```
->
->> Modifier une stratégie existante
+
+#### Modifier une stratégie existante
 ```powershell
 Set-ADFineGrainedPasswordPolicy `
 -Identity "PSO_IT_Strict" `
 -MinPasswordLength 14 `
 -PasswordHistoryCount 30
 ```
->
->> Supprimer une stratégie
+
+#### Supprimer une stratégie
 ```powershell
 Remove-ADFineGrainedPasswordPolicy -Identity "PSO_IT_Strict"
 ```
 
 
-> Résumé 
->
->>Créer :
+#### Résumé 
+
+#### Créer :
 ```powershell
  New-ADFineGrainedPasswordPolicy
 ```
->
->>Appliquer :
+#### Appliquer :
 ```powershell
  Add-ADFineGrainedPasswordPolicySubject
 ```
->
->>Lister :
+
+#### Lister :
 ```powershell
 Get-ADFineGrainedPasswordPolicy
 ```
->
->>Voir application :
+
+#### Voir application :
 ```powershell
  Get-ADUserResultantPasswordPolicy
 ```
->
->>Modifier :
+
+#### Modifier :
 ```powershell
 Set-ADFineGrainedPasswordPolicy
 ```
->
->>Supprimer :
+
+#### Supprimer :
 ```powershell
 Remove-ADFineGrainedPasswordPolicy
 ```
 
-> Récupération d’objets à partir de la corbeille de Active Directory.
+### Récupération d’objets à partir de la corbeille de Active Directory.
+
+####⚠️ Prérequis :
+
+>-Corbeille AD activée
 >
->>⚠️ Prérequis :
+>-Niveau fonctionnel forêt ≥ Windows Server 2008 R2
 >
->>-Corbeille AD activée
->
->>-Niveau fonctionnel forêt ≥ Windows Server 2008 R2
->
->>-Module ActiveDirectory chargé
->
->>1️⃣ Vérifier si la Corbeille AD est activée
+>-Module ActiveDirectory chargé
+
+
+####1️⃣ Vérifier si la Corbeille AD est activée
 ```powershell
 Get-ADOptionalFeature "Recycle Bin Feature" |
 Select-Object Name, EnabledScopes
 ```
 >
 >>- Si EnabledScopes est vide → la corbeille n’est pas activée.
->
->> Activer la Corbeille AD (une seule fois par forêt)
->
->>- ⚠️ Action irréversible
->
+
+
+#### Activer la Corbeille AD (une seule fois par forêt)
+
+>- ⚠️ Action irréversible
+
 ```powershell
 Enable-ADOptionalFeature `
 -Identity "Recycle Bin Feature" `
 -Scope ForestOrConfigurationSet `
 -Target "entreprise.local"
 ```
->
->> Rechercher des objets supprimés
->>-Les objets supprimés ont l’attribut isDeleted = $true.
->
->>-🔹 Lister tous les objets supprimés
+
+###  Rechercher des objets supprimés
+>- Les objets supprimés ont l’attribut isDeleted = $true.
+
+#### 🔹 Lister tous les objets supprimés
 ```powershell
 Get-ADObject -Filter 'isDeleted -eq $true' -IncludeDeletedObjects
 ```
->
->>- 🔹 Rechercher un utilisateur supprimé précis
+
+#### 🔹 Rechercher un utilisateur supprimé précis
 ```powershell
 Get-ADObject -Filter 'Name -like "*Jean*"' `
 -IncludeDeletedObjects
 ```
->
->>- 🔹 Rechercher uniquement les utilisateurs supprimés
+
+#### 🔹 Rechercher uniquement les utilisateurs supprimés
 ```powershell
 Get-ADObject `
 -Filter 'ObjectClass -eq "user" -and isDeleted -eq $true' `
 -IncludeDeletedObjects
 ```
->
->> Restaurer un objet supprimé
+
+#### Restaurer un objet supprimé
 ```powershell
 Restore-ADObject
 ```
->
->>- 🔹 Restaurer par DistinguishedName
+
+#### 🔹 Restaurer par DistinguishedName
 ```powershell
 Restore-ADObject -Identity "CN=Jean Dupont,CN=Deleted Objects,DC=entreprise,DC=local"
 ```
->
->>-🔹 Restaurer automatiquement via recherche
+
+#### 🔹 Restaurer automatiquement via recherche
 ```powershell
 Get-ADObject `
 -Filter 'Name -eq "Jean Dupont"' `
 -IncludeDeletedObjects |
 Restore-ADObject
 ```
->
->> Restaurer vers une autre OU
->>-Si l’OU d’origine n’existe plus :
+
+#### Restaurer vers une autre OU
+>-Si l’OU d’origine n’existe plus :
 ```powsershell
 Restore-ADObject `
 -Identity "CN=Jean Dupont,CN=Deleted Objects,DC=entreprise,DC=local" `
 -TargetPath "OU=IT,DC=entreprise,DC=local"
 ```
->
->> Vérifier la durée de rétention
+
+#### Vérifier la durée de rétention
 ```powershell
 Get-ADObject "CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,DC=entreprise,DC=local" `
 -Properties tombstoneLifetime
 ```
->>-Par défaut : 180 jours (selon version)
->
+>-Par défaut : 180 jours (selon version)
 
 
->>    Gestion des objets requis par la fonctionnalité de Contrôle d’accès dynamique.
-Voici les commandes PowerShell relatives à la gestion des objets nécessaires au Contrôle d’accès dynamique (Dynamic Access Control – DAC) dans Active Directory (AD DS).
 
-DAC repose sur :
+## Gestion des objets requis par la fonctionnalité de Contrôle d’accès dynamique.
 
-Types de revendications (Claim Types)
+- DAC repose sur :
+	- Types de revendications (Claim Types)
 
-Règles de revendication (Claim Rules)
+	- Règles de revendication (Claim Rules)
 
-Stratégies d’accès centralisées (Central Access Policies – CAP)
+	- Stratégies d’accès centralisées (Central Access Policies – CAP)
 
-Règles d’accès centralisées (Central Access Rules – CAR)
+	- Règles d’accès centralisées (Central Access Rules – CAR)
+	- Classification des ressources (File Server)
 
-Classification des ressources (File Server)
 
-1️⃣ Importer les modules nécessaires
+
+###  Importer  modules
+```powershell
 Import-Module ActiveDirectory
 Import-Module ActiveDirectoryRightsManagement
-2️⃣ Gestion des types de revendications (Claim Types)
+```
 
-Les Claim Types permettent d’utiliser des attributs AD (ex : Département) dans les règles d’accès.
 
-🔹 Créer un type de revendication
+### Gestion des types de revendications (Claim Types)
+
+>- Les Claim Types permettent d’utiliser des attributs AD (ex : Département) dans les règles d’accès.
+
+- Créer un type de revendication
+```powershell
 New-ADClaimType `
 -Name "DepartmentClaim" `
 -SourceAttribute "department" `
 -ID "DepartmentClaimID" `
 -DisplayName "Department Claim"
-🔹 Lister les Claim Types
+```
+
+-  Lister les Claim Types
+
+```powershell
 Get-ADClaimType -Filter *
-🔹 Modifier un Claim Type
+```
+- Modifier un Claim Type
+```powershell
 Set-ADClaimType -Identity "DepartmentClaim" -DisplayName "Dept Claim"
-🔹 Supprimer un Claim Type
+```
+- Supprimer un Claim Type
+```powershell
 Remove-ADClaimType -Identity "DepartmentClaim"
-3️⃣ Gestion des règles d’accès centralisées (Central Access Rules – CAR)
+```
 
-Les règles définissent les conditions d’accès (ex : Département = IT).
+###  Gestion des règles d’accès centralisées (Central Access Rules – CAR)
 
-🔹 Créer une règle d’accès centralisée
+>- Les règles définissent les conditions d’accès (ex : Département = IT).
+
+- Créer une règle d’accès centralisée
+```powershell
 New-ADCentralAccessRule `
 -Name "IT_Access_Rule" `
 -ProtectedFromAccidentalDeletion $true
-🔹 Lister les règles
+```
+
+- Lister les règles
+```powesrshell
 Get-ADCentralAccessRule -Filter *
-4️⃣ Gestion des stratégies d’accès centralisées (Central Access Policies – CAP)
+```
+### Gestion des stratégies d’accès centralisées (Central Access Policies – CAP)
 
-Les stratégies regroupent les règles d’accès.
+>- Les stratégies regroupent les règles d’accès.
 
-🔹 Créer une stratégie d’accès centralisée
+- Créer une stratégie d’accès centralisée
+```powsershell
 New-ADCentralAccessPolicy -Name "IT_Access_Policy"
-🔹 Ajouter une règle à une stratégie
+```
+- Ajouter une règle à une stratégie
+```powsershell
 Add-ADCentralAccessPolicyMember `
 -Identity "IT_Access_Policy" `
 -Members "IT_Access_Rule"
-🔹 Lister les stratégies
+```
+- Lister les stratégies
+```powsershell
 Get-ADCentralAccessPolicy -Filter *
-5️⃣ Activer la stratégie sur un serveur de fichiers
+```
 
-Sur le serveur de fichiers :
+### Activer la stratégie sur un serveur de fichiers
 
+>- Sur le serveur de fichiers :
+```powsershell
 Set-FileClassification `
 -Path "D:\PartageIT" `
 -CentralAccessPolicy "IT_Access_Policy"
-6️⃣ Gestion de la classification des ressources
+```
 
-DAC fonctionne avec la classification des fichiers.
+- Gestion de la classification des ressources
 
-🔹 Lister les propriétés de ressource
+>- DAC fonctionne avec la classification des fichiers.
+
+- Lister les propriétés de ressource
+```powsershell
 Get-ADResourceProperty -Filter *
-🔹 Créer une propriété de ressource
+```
+
+- Créer une propriété de ressource
+```powsershell
 New-ADResourceProperty `
 -Name "ConfidentialityLevel" `
 -DisplayName "Confidentiality Level" `
 -ResourcePropertyValueType String
-🎯 Résumé rapide examen
+```
+
+### 🎯 Résumé rapide examen
+```
 Claim Type :
 - New-ADClaimType
 - Get-ADClaimType
@@ -1548,17 +1509,20 @@ Central Access Policy :
 Resource Property :
 - New-ADResourceProperty
 - Get-ADResourceProperty
-🔐 Rappel important
+```
 
-DAC permet :
 
-Contrôle basé sur attributs utilisateur
+### 🔐 Rappel important
 
-Contrôle basé sur classification des fichiers
+- DAC permet :
 
-Gestion centralisée des accès
+	- Contrôle basé sur attributs utilisateur
 
-Audit avancé
+	- Contrôle basé sur classification des fichiers
+
+	- Gestion centralisée des accès
+
+	- Audit avancé
 
 
 
@@ -1568,13 +1532,12 @@ Audit avancé
 ** = console web **
 - gérer les serveurs au lieu d’utiliser des Outils d’administration de serveur distant.
 
->Remarque
->
->Vous ne devriez pas installer Windows Admin Center sur un ordinateur serveur qui est configuré en tant que contrôleur de domaine AD DS.
-> le télécharger et l’installe
->activer le port TCP approprié sur le pare-feu local
->
->À moins que vous n’utilisiez un certificat provenant d’une autorité de certification approuvée, la première fois que vous exécutez Windows Admin Center, vous êtes invité à sélectionner un certificat client. Veillez à sélectionner le certificat intitulé Client Windows Admin Center.
+- Remarque
+	- Vous ne devriez pas installer Windows Admin Center sur un ordinateur serveur qui est configuré en tant que contrôleur de domaine AD DS.
+	-  le télécharger et l’installe
+	- activer le port TCP approprié sur le pare-feu local
+
+- À moins que vous n’utilisiez un certificat provenant d’une autorité de certification approuvée, la première fois que vous exécutez Windows Admin Center, vous êtes invité à sélectionner un certificat client. Veillez à sélectionner le certificat intitulé Client Windows Admin Center.
 
 
 
