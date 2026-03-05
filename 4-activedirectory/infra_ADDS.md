@@ -15,75 +15,214 @@ Infrastructure
 
 ```
 
+- Configuration IP du serveur
+	- exemple pour ton DC
 
-
-# Configurer le firewall
-- allow SSH
-
-# Plan d'adressage réseau
-- Créer 8 VLAN01 - VLAN08
-
-# Conception hierarchiques de l'infrastructure Active directory
-![Infrastructure Active Directory](https://raw.githubusercontent.com/juesp311-rgb/projetinfrastructure/main/4-activedirectory/Corporate%20IT%20infrastructure%20diagram.png)
-
-# Définir les forêts et les domaines, " des groupes utilisateurs" 
-# La création d’une forêt, de domaines, d’OU et d’objets
-
->- 🌐 Conception hiérarchique AD DS avec PowerShell
- 
-- Création de la forêt (nouveau domaine racine)
 ```powershell
-Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
- 
+New-NetIPAddress `
+-InterfaceAlias "Ethernet" `
+-IPaddress 10.10.10.10 `
+-PrefixLength 24 `
+-DefaultGateway 10.10.10.1
+```
+	- DNS (vers lui-même) :
+```powershell
+Set-DnsClientServerAddress `
+-InterfaceAlias "Ethernet" `
+-ServerAddresses ("127.0.0.1")
+```
+
+- Installer Active Directory
+```bash 
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+```
+
+- Créer la forêt et le domaine
+	- Forest : corptech.com
+	- Domain : ad.corptech.com
+
+```powershell 
 Install-ADDSForest `
--DomainName "entreprise.local" `
--DomainNetbiosName "ENTREPRISE" `
--InstallDNS `
--DatabasePath "C:\Windows\NTDS" `
--LogPath "C:\Windows\NTDS" `
--SysvolPath "C:\Windows\SYSVOL" `
--Force:$true
-```
- 
-        - Résultat → Domaine racine : `entreprise.local`  
-        - Serveur devient **contrôleur de domaine (DC)**  
+-DomainName "ad.corptech.com" `
+-DomainNetbiosName "CORPTECH" `
+-InstallDns `
+-SafeModeAdministratorPassword (Read-Host -AsSecureString "DSRM Password") `
+-Force```
 
- 
+**Le serveur va créer la forêt, créer le domaine, installer DNS, devenir Domain Controller, puis redémarrer**
 
--  Créer une OU dans le domaine racine
+
+- Installer DHCP
 ```powershell
-New-ADOrganizationalUnit -Name "IT" -Path "DC=entreprise,DC=local" -ProtectedFromAccidentalDeletion $true
-New-ADOrganizationalUnit -Name "Marketing" -Path "DC=entreprise,DC=local" -ProtectedFromAccidentalDeletion $true
+Install-WindowsFeature DHCP -IncludeManagementTools
 ```
- 
-        >- OU = conteneurs logiques pour les objets  
-        >- Protection contre suppression accidentelle activée  
 
-
-
--  Ajouter des objets dans les OU
- 
-        - Ajouter un utilisateur
-```powershell
-New-ADUser -Name "Jean Dupont" -SamAccountName jdupont `
--UserPrincipalName jdupont@entreprise.local `
--Path "OU=IT,DC=entreprise,DC=local" `
--AccountPassword (Read-Host -AsSecureString "Mot de passe") `
--Enabled $true
+- Autoriser DHCP dans Active Directory
+```powershell 
+Add-DhcpServerInDC `
+-DnsName "dc01.ad.corptech.com" `
+-IPaddress 10.10.10.10
 ```
- 
-        - Ajouter un ordinateur
+
+⚠️ Important : seul un serveur DHCP autorisé dans AD peut distribuer des IP.
+
+C’est une sécurité entreprise contre les rogue DHCP.
+
+
+- Vérifier
 ```powershell
-New-ADComputer -Name "PC01" -Path "OU=IT,DC=entreprise,DC=local"
+Get-DhcpServerInDC
+```
+
+- Résultat attendu :
+> dc01.ad.corptech.com   10.10.10.10
 
 
+- ⭐ Architecture du  lab
+```
+CorpTech Infrastructure
+│
+├── Forest : corptech.com
+│
+└── Domain : ad.corptech.com
+      │
+      ├── DC01 (10.10.10.10)
+      │      AD DS
+      │      DNS
+      │      DHCP
+      │
+      ├── FILE01 (10.10.10.20)
+      │
+      └── WSUS01 (10.10.10.30)
+```
 
+# Dans VirtualBox, crée 2 VM :
 
+- FILE01
+```
+Nom : FILE01
+OS : Windows Server
+RAM : 4 GB
+Disque : 100 GB
+Réseau : VLAN10 (Serveurs)
+```
+- WSUS01
+```
+Nom : WSUS01
+OS : Windows Server
+RAM : 4 GB
+Disque : 120 GB
+Réseau : VLAN10
+```
 
+- Configurer l’IP (PowerShell)
+>- FILE01
+```powershell
+New-NetIPAddress `
+-InterfaceAlias "Ethernet" `
+-IPaddress 10.10.10.20 `
+-PrefixLength 24 `
+-DefaultGateway 10.10.10.1
+```
+>- DNS → ton contrôleur de domaine :
+```powershell 
+Set-DnsClientServerAddress `
+-InterfaceAlias "Ethernet" `
+-ServerAddresses ("10.10.10.10")
+```
+>-WSUS01
+```powsershell
+New-NetIPAddress `
+-InterfaceAlias "Ethernet" `
+-IPaddress 10.10.10.30 `
+-PrefixLength 24 `
+-DefaultGateway 10.10.10.1
+```
+>- DNS :
+Set-DnsClientServerAddress `
+-InterfaceAlias "Ethernet" `
+-ServerAddresses ("10.10.10.10")
 
+- Renommer les serveurs
+	- Sur chaque VM :
 
+>- FILE01
+```powsershell 
+Rename-Computer FILE01 -Restart
+```
+>- WSUS01
+```powershell
+Rename-Computer WSUS01 -Restart
+```
+- Joindre le domaine
 
-# Connexion à plusieurs domaine
-# Recherche et filtrage des Données AD DS en générant des requêtes
-# Récupération d'objet de la corbeille
-# Le contrôle d'accès dynamique
+>- Supposons ton domaine :
+```powsershell
+ad.corptech.com
+```
+>- Sur FILE01 :
+```powershell 
+Add-Computer `
+-DomainName "ad.corptech.com" `
+-Credential "CORPTECH\Administrator" `
+-Restart
+```
+- Même chose sur WSUS01.
+
+- Installer le rôle FILE SERVER
+
+>- Sur FILE01 :
+```powershell
+Install-WindowsFeature FS-FileServer -IncludeManagementTools
+```
+
+>- Créer un dossier partagé :
+```powershell
+New-Item -ItemType Directory -Path "D:\Shares"
+```
+>- Partager :
+```powershell 
+New-SmbShare `
+-Name "Shares" `
+-Path "D:\Shares" `
+-FullAccess "CORPTECH\Domain Admins"
+```
+- Installer WSUS
+
+>- Sur WSUS01 :
+```powershell 
+Install-WindowsFeature `
+-Name UpdateServices `
+-IncludeManagementTools
+```
+>- Configurer WSUS :
+```powershell
+wsusutil postinstall CONTENT_DIR=D:\WSUS
+```
+
+>- Puis ouvrir :
+``` Server Manager
+→ Tools
+→ Windows Server Update Services
+```
+
+- Infrastrusture
+
+```
+ VLAN10 (Serveurs)
+10.10.10.0/24
+│
+├── DC01
+│   10.10.10.10
+│   AD DS
+│   DNS
+│   DHCP
+│
+├── FILE01
+│   10.10.10.20
+│   File Server
+│
+└── WSUS01
+    10.10.10.30
+    Windows Update Server
+```
