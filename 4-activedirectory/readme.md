@@ -1,25 +1,7 @@
 # Active Directory Home Lab (System Admnistration)
-## les bases
 
-- Les forêts, 
-- les domaines
-- les sites,
-- les contrôleurs de domaine
-- les unités d’organisation (UO),
-- les utilisateurs et les groupes.
-
-
-## Service de réplication 
-- =distribut données d'annuaire sur un réseau
-- =concept de réplication active directory
-
--    Structure et technologies de stockage Active Directory
--    Rôles du contrôleur de domaine
--    Sdchéma Active Directory
--    Gestion des confiances
--    Technologies de réplication Active Directory
--    Technologies de recherche et de publication Active Directory   paramètres de stratégie de groupe DNS
--    Référence technique sur le schéma Active Directory
+/home/jukali/Downloads/Corporate IT infrastructure diagram.png
+![Guide Active Directory](/home/jukali/Downloads/Corporate IT infrastructure diagram.png  "Infrastructure Active Directory")
 
 # Définir AD DS
 - le magasin central de tous les objets de domaine, tels que les comptes d’utilisateur, les comptes d’ordinateur et les groupes
