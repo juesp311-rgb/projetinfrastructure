@@ -1,8 +1,7 @@
 # Active Directory Home Lab (System Admnistration)
 
 
-![Infrastructure Active Directory](/home/jukali/formationtssr/projetinfrastructure/4-activedirectory/Corporate IT infrastructure diagram.png)
-
+![Infrastructure Active Directory](https://raw.githubusercontent.com/juesp311-rgb/projetinfrastructure/main/4-activedirectory/Corporate%20IT%20infrastructure%20diagram.png)
 
 
 # Définir AD DS
