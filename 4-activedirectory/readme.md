@@ -1,7 +1,9 @@
 # Active Directory Home Lab (System Admnistration)
 
-/home/jukali/Downloads/Corporate IT infrastructure diagram.png
-![Guide Active Directory](/home/jukali/Downloads/Corporate IT infrastructure diagram.png  "Infrastructure Active Directory")
+
+![Infrastructure Active Directory](/home/jukali/formationtssr/projetinfrastructure/4-activedirectory/Corporate IT infrastructure diagram.png)
+
+
 
 # Définir AD DS
 - le magasin central de tous les objets de domaine, tels que les comptes d’utilisateur, les comptes d’ordinateur et les groupes
