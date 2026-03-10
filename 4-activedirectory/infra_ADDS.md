@@ -1,43 +1,96 @@
 # Active Directory Home Lab (System Admnistration)
-```
-Infrastructure
-│
-├── network
-│   ├── vlan-plan.md
-│   ├── ip-addressing.md
-│
-├── active-directory
-│   ├── ou-structure.md
-│   ├── gpo-security.md
-│
-└── diagrams
-    ├── network-datacenter.png
+## Configuration Active Directory
 
-```
+- VM1 Windows Server 2022  Serveur AD
 
-- Configuration IP du serveur
-	- exemple pour ton DC
+	- Interfaces réseau :
 
-```powershell
-New-NetIPAddress `
--InterfaceAlias "Ethernet" `
--IPaddress 10.10.10.10 `
--PrefixLength 24 `
--DefaultGateway 10.10.10.1
-```
-	- DNS (vers lui-même) :
-```powershell
-Set-DnsClientServerAddress `
--InterfaceAlias "Ethernet" `
--ServerAddresses ("127.0.0.1")
-```
+		- VLAN20-USER → 10.10.20.1 (serveur DNS + passerelle pour VLAN20)
 
-- Installer Active Directory
+		- VLAN30-MONITORING → 10.10.30.1
+
+		- NAT / SSH → accès Internet / administration
+
+	- Rôles installés : ADDS + DNS
+
+- VM Windows 10 CLIENT01 et CLIENT02
+
+	- Carte réseau connectée à VLAN20-USER
+
+	- IP statique ou DHCP dans le sous-réseau 10.10.20.0/24
+
+	- DNS → 10.10.20.1 (IP du serveur AD)
+
+- Communication :
+
+	- CLIENT01 / CLIENT02 → ping 10.10.20.1 ✅
+
+	- Serveur AD → ping VLAN20 clients ✅
+
+	- Serveur AD:  le routage VLAN30-MONITORING
+
+## Etapes Virtualbox
+- VM Windows 10 :
+
+	- Réseau → Activer un adaptateur
+
+	- Attacher à → Internal Network ou Réseau interne (nom = VLAN20-USER)
+
+	- Cette interface va se “connecter” uniquement à la VM1 (Windows Server) sur le même VLAN.
+
+- Configurer l’IP sur la VM :
+
+
+Réponse positive → VM peut joindre le serveur AD et sera prête à joindre le domaine.
+
+## Etapes 
+
+-  → VM1  Windows Server 2022, contrôleur de domaine + DNS + passerelle VLAN20
+
+
+- Configurer VM2 dans VirtualBox
+
+	- Activer deux cartes réseau internes :
+
+		- Adaptateur 1 → VLAN20-USER (simule CLIENT01)
+
+		- Adaptateur 2 → VLAN20-USER (simule CLIENT02)
+
+- Attribuer une IP statique à chaque interface
+
+	- Interface CLIENT01 :
+
+		- IP : 10.10.20.10
+
+		- Masque : 255.255.255.0
+
+		- Passerelle : 10.10.20.1 (serveur AD)
+
+		- DNS : 10.10.20.1	
+
+	- Interface CLIENT02 :
+
+		- IP : 10.10.20.11
+
+		- Masque : 255.255.255.0
+
+		- Passerelle : 10.10.20.1
+
+		- DNS : 10.10.20.1
+
+Vérifier la connectivité
+Depuis VM2 (pour chaque interface) :
+
+
+## Commandes installation AD DS
+
+###  VM1 Windows Server 2022
+- Install ADDS
 ```bash 
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 ```
 
-- Créer la forêt et le domaine
+- Crée la forêt et le domaine
 	- Forest : corptech.com
 	- Domain : ad.corptech.com
 
@@ -57,7 +110,7 @@ Install-ADDSForest `
 Install-WindowsFeature DHCP -IncludeManagementTools
 ```
 
-- Autoriser DHCP dans Active Directory
+	- Autoriser DHCP dans Active Directory
 ```powershell 
 Add-DhcpServerInDC `
 -DnsName "dc01.ad.corptech.com" `
@@ -73,156 +126,139 @@ C’est une sécurité entreprise contre les rogue DHCP.
 ```powershell
 Get-DhcpServerInDC
 ```
+	- Résultat attendu :
+	> dc01.ad.corptech.com   10.10.10.10
 
-- Résultat attendu :
-> dc01.ad.corptech.com   10.10.10.10
-
-
-- ⭐ Architecture du  lab
-```
-CorpTech Infrastructure
-│
-├── Forest : corptech.com
-│
-└── Domain : ad.corptech.com
-      │
-      ├── DC01 (10.10.10.10)
-      │      AD DS
-      │      DNS
-      │      DHCP
-      │
-      ├── FILE01 (10.10.10.20)
-      │
-      └── WSUS01 (10.10.10.30)
-```
-
-# Dans VirtualBox, crée 2 VM :
-
-- FILE01
-```
-Nom : FILE01
-OS : Windows Server
-RAM : 4 GB
-Disque : 100 GB
-Réseau : VLAN10 (Serveurs)
-```
-- WSUS01
-```
-Nom : WSUS01
-OS : Windows Server
-RAM : 4 GB
-Disque : 120 GB
-Réseau : VLAN10
-```
-
-- Configurer l’IP (PowerShell)
->- FILE01
-```powershell
-New-NetIPAddress `
--InterfaceAlias "Ethernet" `
--IPaddress 10.10.10.20 `
--PrefixLength 24 `
--DefaultGateway 10.10.10.1
-```
->- DNS → ton contrôleur de domaine :
+- Créer les ordinateurs dans AD (sur VM1)
 ```powershell 
-Set-DnsClientServerAddress `
--InterfaceAlias "Ethernet" `
--ServerAddresses ("10.10.10.10")
+New-ADComputer -Name "CLIENT01" -SamAccountName "CLIENT01" -Path "CN=Computers,DC=corptech,DC=local" -Enabled $true
+New-ADComputer -Name "CLIENT02" -SamAccountName "CLIENT02" -Path "CN=Computers,DC=corptech,DC=local" -Enabled $true
 ```
->-WSUS01
-```powsershell
-New-NetIPAddress `
--InterfaceAlias "Ethernet" `
--IPaddress 10.10.10.30 `
--PrefixLength 24 `
--DefaultGateway 10.10.10.1
-```
->- DNS :
-Set-DnsClientServerAddress `
--InterfaceAlias "Ethernet" `
--ServerAddresses ("10.10.10.10")
 
-- Renommer les serveurs
-	- Sur chaque VM :
+- Vérifier que les ordinateurs existent dans AD
 
->- FILE01
-```powsershell 
-Rename-Computer FILE01 -Restart
-```
->- WSUS01
 ```powershell
-Rename-Computer WSUS01 -Restart
+Get-ADComputer -Filter * | Select Name
 ```
-- Joindre le domaine
 
->- Supposons ton domaine :
-```powsershell
-ad.corptech.com
-```
->- Sur FILE01 :
-```powershell 
-Add-Computer `
--DomainName "ad.corptech.com" `
--Credential "CORPTECH\Administrator" `
--Restart
-```
-- Même chose sur WSUS01.
+>Tu devrais voir :
+>
+>Name
+>
+>----
+>
+>CLIENT01
+>
+>CLIENT02
+>
+>WIN-2FVON6A0R35   (ton contrôleur de domaine)
 
-- Installer le rôle FILE SERVER
-
->- Sur FILE01 :
+- Tester la communication avec le serveur AD
 ```powershell
-Install-WindowsFeature FS-FileServer -IncludeManagementTools
+ping 10.10.20.1
 ```
-
->- Créer un dossier partagé :
 ```powershell
-New-Item -ItemType Directory -Path "D:\Shares"
+nslookup corptech.local
 ```
->- Partager :
-```powershell 
-New-SmbShare `
--Name "Shares" `
--Path "D:\Shares" `
--FullAccess "CORPTECH\Domain Admins"
-```
-- Installer WSUS
+-> failed
 
->- Sur WSUS01 :
-```powershell 
-Install-WindowsFeature `
--Name UpdateServices `
--IncludeManagementTools
-```
->- Configurer WSUS :
+- Joindre la machine au domaine 
+	- Sur CLIENT01 :
 ```powershell
-wsusutil postinstall CONTENT_DIR=D:\WSUS
+Add-Computer -DomainName corptech.local -Credential corptech.local\Administrateur -Restart
+```
+Configure et vérifie le DNS
+```powershell
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 10.10.20.1
 ```
 
->- Puis ouvrir :
-``` Server Manager
-→ Tools
-→ Windows Server Update Services
+- Tester directement ton DNS Active Directory
+```powershell
+nslookup corptech.local 10.10.20.1
+```
+ ⭐
+
+
+
+# -------------------------------
+# Script PowerShell pour AD
+# Domaine : ad.corptech.com
+# -------------------------------
+
+Import-Module ActiveDirectory
+
+# Variables
+$DomainPath = "DC=ad,DC=corptech,DC=com"
+
+# 1️⃣ Créer les OU
+$ouUsers = "OU=Utilisateurs,$DomainPath"
+$ouGroups = "OU=Groupes,$DomainPath"
+
+# Création des OU si elles n'existent pas déjà
+if (-not (Get-ADOrganizationalUnit -Filter "Name -eq 'Utilisateurs'" -ErrorAction SilentlyContinue)) {
+    New-ADOrganizationalUnit -Name "Utilisateurs" -Path $DomainPath
+    Write-Host "OU 'Utilisateurs' créée."
+} else {
+    Write-Host "OU 'Utilisateurs' existe déjà."
+}
+
+if (-not (Get-ADOrganizationalUnit -Filter "Name -eq 'Groupes'" -ErrorAction SilentlyContinue)) {
+    New-ADOrganizationalUnit -Name "Groupes" -Path $DomainPath
+    Write-Host "OU 'Groupes' créée."
+} else {
+    Write-Host "OU 'Groupes' existe déjà."
+}
+
+# 2️⃣ Créer des utilisateurs d'exemple
+$users = @(
+    @{Name="Jean Dupont"; Sam="jdupont"; Email="jdupont@ad.corptech.com"},
+    @{Name="Marie Martin"; Sam="mmartin"; Email="mmartin@ad.corptech.com"},
+    @{Name="Alice Leroy"; Sam="aleroy"; Email="aleroy@ad.corptech.com"}
+)
+
+foreach ($user in $users) {
+    if (-not (Get-ADUser -Filter "SamAccountName -eq '$($user.Sam)'" -ErrorAction SilentlyContinue)) {
+        New-ADUser `
+            -Name $user.Name `
+            -SamAccountName $user.Sam `
+            -UserPrincipalName $user.Email `
+            -Path $ouUsers `
+            -AccountPassword (ConvertTo-SecureString "MotDePasseComplexe123!" -AsPlainText -Force) `
+            -Enabled $true
+        Write-Host "Utilisateur '$($user.Name)' créé."
+    } else {
+        Write-Host "Utilisateur '$($user.Name)' existe déjà."
+    }
+}
+
+# 3️⃣ Créer des groupes
+$groups = @("IT_Admins", "Ventes", "Support")
+
+foreach ($group in $groups) {
+    if (-not (Get-ADGroup -Filter "Name -eq '$group'" -ErrorAction SilentlyContinue)) {
+        New-ADGroup `
+            -Name $group `
+            -GroupScope Global `
+            -GroupCategory Security `
+            -Path $ouGroups
+        Write-Host "Groupe '$group' créé."
+    } else {
+        Write-Host "Groupe '$group' existe déjà."
+    }
+}
+
+# 4️⃣ Ajouter des utilisateurs aux groupes
+Add-ADGroupMember -Identity "IT_Admins" -Members "jdupont"
+Add-ADGroupMember -Identity "Ventes" -Members "mmartin"
+Add-ADGroupMember -Identity "Support" -Members "aleroy"
+
+Write-Host "Tous les utilisateurs ont été ajoutés aux groupes correspondants."
 ```
 
-- Infrastrusture
 
 ```
- VLAN10 (Serveurs)
-10.10.10.0/24
-│
-├── DC01
-│   10.10.10.10
-│   AD DS
-│   DNS
-│   DHCP
-│
-├── FILE01
-│   10.10.10.20
-│   File Server
-│
-└── WSUS01
-    10.10.10.30
-    Windows Update Server
-```
+
+
+
+
+
