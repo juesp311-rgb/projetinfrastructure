@@ -180,6 +180,114 @@ nslookup corptech.local 10.10.20.1
 
 
 
+Astuce pour les labs
+
+Pour réinitialiser complètement une interface avant de lui mettre une nouvelle IP + gateway + DNS, tu peux faire :
+
+# Supprimer toutes les IP
+Get-NetIPAddress -InterfaceAlias "DC" | Remove-NetIPAddress -Confirm:$false
+
+# Supprimer toutes les routes associées
+Get-NetRoute -InterfaceAlias "DC" | Remove-NetRoute -Confirm:$false
+
+# Reset DNS
+Set-DnsClientServerAddress -InterfaceAlias "DC" -ResetServerAddresses
+
+Puis faire New-NetIPAddress avec ta nouvelle configuration.
+
+1️⃣ Configurer l’IP et la passerelle
+New-NetIPAddress `
+    -InterfaceAlias "DC" `
+    -IPAddress 10.10.30.2 `
+    -PrefixLength 24 `
+    -DefaultGateway 10.10.30.1
+
+InterfaceAlias : nom exact de l’interface
+
+IPAddress : nouvelle IP de l’interface
+
+PrefixLength : 24 pour masque 255.255.255.0
+
+DefaultGateway : passerelle VLAN correspondante
+
+2️⃣ Configurer le DNS
+Set-DnsClientServerAddress `
+    -InterfaceAlias "DC" `
+    -ServerAddresses 10.10.30.1
+
+Le DNS doit être ton serveur AD pour que la jonction au domaine fonctionne.
+
+3️⃣ Vérification
+# Vérifier IP et passerelle
+Get-NetIPAddress -InterfaceAlias "DC"
+
+# Vérifier DNS
+Get-DnsClientServerAddress -InterfaceAlias "DC"
+
+# Vérifier routes
+Get-NetRoute -InterfaceAlias "DC"
+
+Tu dois voir :
+
+IP : 10.10.30.2/24
+
+Gateway : 10.10.30.1
+
+DNS : 10.10.30.1
+
+💡 Astuce pour ton lab :
+Après ça, teste toujours la connectivité avec le serveur AD :
+
+ping 10.10.30.1
+nslookup corptech.local 10.10.30.1
+
+
+
+1️⃣ Vérifier si le module est disponible
+Get-Module -ListAvailable
+
+Tu devrais voir un module appelé ActiveDirectory
+
+Si tu ne le vois pas, il faut installer le rôle RSAT ou ADDS Tools.
+
+2️⃣ Installer le module (si nécessaire)
+
+Sur Windows Server 2022 (ta VM DC) :
+
+# Installer les outils AD
+Install-WindowsFeature RSAT-AD-PowerShell
+
+Après l’installation, tu peux vérifier :
+
+Import-Module ActiveDirectory
+
+Ensuite la commande fonctionne :
+
+Get-ADComputer -Filter * | Select-Object Name
+3️⃣ Astuce
+
+Sur un client Windows 10, il faut installer RSAT pour Active Directory avant de pouvoir utiliser Get-ADComputer.
+
+Sur une VM serveur jointe au domaine, le module devrait déjà être disponible après avoir installé ADDS / RSAT.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # -------------------------------
 # Script PowerShell pour AD
 # Domaine : ad.corptech.com
@@ -198,7 +306,28 @@ $ouGroups = "OU=Groupes,$DomainPath"
 if (-not (Get-ADOrganizationalUnit -Filter "Name -eq 'Utilisateurs'" -ErrorAction SilentlyContinue)) {
     New-ADOrganizationalUnit -Name "Utilisateurs" -Path $DomainPath
     Write-Host "OU 'Utilisateurs' créée."
-} else {
+1️⃣ Vérifier si le module est disponible
+
+Get-Module -ListAvailable
+
+    Tu devrais voir un module appelé ActiveDirectory
+
+    Si tu ne le vois pas, il faut installer le rôle RSAT ou ADDS Tools.
+
+2️⃣ Installer le module (si nécessaire)
+
+Sur Windows Server 2022 (ta VM DC) :
+
+# Installer les outils AD
+Install-WindowsFeature RSAT-AD-PowerShell
+
+    Après l’installation, tu peux vérifier :
+
+Import-Module ActiveDirectory
+
+    Ensuite la commande fonctionne :
+
+Get-ADComputer -Filter * | Select-Object Name} else {
     Write-Host "OU 'Utilisateurs' existe déjà."
 }
 

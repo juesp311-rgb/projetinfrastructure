@@ -2,6 +2,16 @@
 
 [Lien Windowsserver eval](https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x>)
 
+##Check 
+```powershell
+VBoxManage list hdds
+```
+- Si state inaccessible, supprimer les disques cassés
+
+```powershell
+VBoxManage closemedium disk 9f30b322-5aa3-445d-be9a-3ed6700092e4 --delete
+```
+
 
 ## Configuration de Virtualbox
 ### Vérifie l’ordre de boot

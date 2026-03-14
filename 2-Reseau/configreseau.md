@@ -1,367 +1,215 @@
-# Configuration Ip Statique Ubuntu
+# WindowsServer2022
+## Vbox
+⚠️ La VM doit être éteinte.
 
-## Configuration du réseau dans Vbox
-
-### Accès à ubuntuserver via SSH
-#### Connexion en Nat avec port forwarding
-
-> Supprimer l'ancienne clé ssh
+Vérifier les interfaces reseaux
 
 ```bash
-ssh-keygen -f '/home/jukali/.ssh/known_hosts' -R '[127.0.0.1]:2222'
+Get-NetAdpater
 ```
-> Configurer port 2222 dans Vbox
-```bash
-VBoxManage modifyvm "UbuntuServer" --natpf1 "SSH,tcp,,2222,,22"
-```
+>- Interface NAT = 10.0.2.2
 
-> Lancer ssh (failed)
-
-```bash
-ssh ubuntuserverweb@127.0.0.1 -p 2222
-```
-
-** Solution proposée **
-
-### Ajout d'un adatptateur host-only
-
-> Vérifier les adaptateurs Host-Only existants
-```bash
-VBoxManage list hostonlyifs
-```
-
-> Créer le Host-Only Adapter
-
-```bash
-VBoxManage hostonlyif create
-```
->  Configurer l’IP du Host-Only Adapter
-
+- Crée 3  interface réseau interne "intnet"
+	- VLAN 10
 ```bash 
-VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+VBoxManage modifyvm "WindowsServer2022" \
+--nic2 intnet \
+--intnet2 "VLAN10"
 ```
-
-> Ajouter la carte Host-Only à la VM
-
-```bash 
-VBoxManage modifyvm "UbuntuServer" --nic3 hostonly --hostonlyadapter3 vboxnet0 --cableconnected3 on
-```
-
-> Vérifier
+	- VLAN20
 ```bash
-VBoxManage showvminfo "UbuntuServer" | grep -i nic
+VBoxManage modifyvm "WindowsServer2022" \
+--nic3 intnet \
+--intnet3 "VLAN20"
 ```
-### Identifier l'addresse mac de l'adaptateur host-only
-
-> Configurer l'interface de la VM qui à la meme adresse mac que l'adaptateur host-only
+	- VLAN30
 ```bash
- sudo ip addr flush dev enp0s8
- sudo ip addr add 192.168.56.10/24 dev enp0s9
- git commit -m "Résolution des conflits"sudo ip link set enp0s8 up
+VBoxManage modifyvm "WindowsServer2022" \
+--nic4 intnet \
+--intnet4 "VLAN30"
 ```
-### Se connecter à la vm via ssh pour le transfert de fichier
 
+- Vérifier la configuration réseau
 ```bash
-ssh ubuntuserverweb@192.168.10.10 (de kali)
-```
-
-#### Vérification de l'adresse MAC Host-only enps09
-
-```bash
-ip a show
-ip link show
+VBoxManage showvminfo "WindowsServer2022" | grep -i NIC
 ```
 
 
-### Configuration IP statique
+#---
+# Installer OpenSSH Server
+#---
 
->Ouvrir le fichier netplan
-
-```bash
-cd /etc/netplan
-sudo chmod u+x ubuntuipstatique.yaml
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 ```
-> Configuration du fichier ubuntustatiqueip.yaml
-
-```bash 
-
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    enp0s9:                     # Host-Only
-      dhcp4: no
-      addresses:
-        - 192.168.56.10/24
-      nameservers:
-        addresses: [8.8.8.8,8.8.4.4]
-
-    enp0s8:                     # Internal Network
-      dhcp4: no
-      addresses:
-        - 192.168.10.10/24
-      # pas de gateway
+#---
+#Démarrer le servcice SSH
+#---
+```powershell
+Start-Service sshd
 ```
-
-> Appliquer la configuration netplan
-```bash
-sudo chmod 600 /etc/netplan/ubuntuipstatique.yaml
-sudo netplan apply
-```
-
-** Connextion SSH : enps09 **
-** IP statique reseau interne : enps08 **
-
-
-
-# Configuration CentosBdd (ssh + ip statique)
-## Accès Centosbdd via ssh
-
-> enps09 : host-only : ssh : 192.168.56.20
-> users : centosbdd
-
-
-### Vérifier IP de CentosBdd
-
-```bash
-sudo systemctl status sshd
-```
-
-### Installation, enable, start sshd
-```bash
-sudo systemctl enable sshd --now
-```
-
-### Ajout d'un adatptateur host-only
-
-> Vérifier les adaptateurs Host-Only existants
-```bash
-VBoxManage list hostonlyifs
-```
-
-> Créer le Host-Only Adapter
-
-```bash
-VBoxManage hostonlyif create
-```
->  Configurer l’IP du Host-Only Adapter
-
-```bash 
-VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
-```
-
-> Ajouter la carte Host-Only à la VM
-
-```bash 
-VBoxManage modifyvm "centosbdd" --nic3 hostonly --hostonlyadapter3 vboxnet0 --cableconnected3 on
-```
-
-> Vérifier
-```bash
-VBoxManage showvminfo "centosbdd" | grep -i nic
+#---
+#Activer le démarrage automatique
+#---
+```powershell
+Set-Service -Name sshd -StartupType Automatic
 ```
 
 
-#### Atttribue IP à l'insterface enps09 qui a la même **  MAC **  adresse que vboxnet0
-
-** Réinitailise et configure interface : **
-
->> ```bash
->
->> sudo ip addr flush dev enp0s8
->
->> sudo ip addr add 192.168.56.10/24 dev enp0s9
->
->>sudo ip link set enp0s8 up
+#---
+# Vérifier que le service fonctionne
+#---
+```powershell
+Get-Service sshd
 ```
 
-ou
-
-
-> Créer une connexion host-only enps09
-
-```bash
-sudo nmcli con add type ethernet con-name hostonly ifname enp0s9 ipv4.method manual ipv4.addresses 192.168.56.10/24
-sudo nmcli con up hostonly
+#---
+# Autoriser SSH dans le firewall
+#---
+- Vérifier
+```powershell
+Get-NetFirewallRule -Name *ssh*
+```
+- Sinon
+```powershell
+New-NetFirewallRule -Name sshd `
+-DisplayName "OpenSSH Server" `
+-Enabled True `
+-Direction Inbound `
+-Protocol TCP `
+-Action Allow `
+-LocalPort 22
 ```
 
-> Créer une connexion reseau interne (enps08)
+#---
+#Tester la connexion SSH
+#---
 
-```bash 
-sudo nmcli con add type ethernet con-name internal ifname enp0s8 ipv4.method manual ipv4.addresses 192.168.10.11/24
-sudo nmcli con up internal
+```powershell
+ssh Administrateur@10.10.30.10
+```
+#---
+# Vérifier que le port SSH écoute
+#---
+```powershell
+netstat -an | findstr :22
 ```
 
-> Vérifier interface
 
-```bash
-ip a
-nmcli con show
+
+# ---------------------------
+# 1️⃣ Renommer les interfaces
+# ---------------------------
+Rename-NetAdapter -Name "Ethernet" -NewName "NAT"
+Rename-NetAdapter -Name "Ethernet 2" -NewName "VLAN10-SERVERS"
+Rename-NetAdapter -Name "Ethernet 3" -NewName "VLAN20-USERS"
+Rename-NetAdapter -Name "Ethernet 4" -NewName "VLAN30-MGMT"
+
+
+#---
+# Supprimer les anciennes addresse APIPA
+#---
+```powershell
+Remove-NetIPAddress -InterfaceAlias "VLAN10" -Confirm:$false
+Remove-NetIPAddress -InterfaceAlias "VLAN20" -Confirm:$false
 ```
 
-> Désactiver le firewall (optionnel)
+# ---------------------------
+# 3️⃣ Configurer les VLAN internes avec IP statiques
+# ---------------------------
 
-```bash
-sudo systemctl status firewalld
-sudo systemctl stop firewalld
+
+-  VLAN10 SERVERS
+```powershell
+New-NetIPAddress -InterfaceAlias "VLAN10-SERVERS" -IPAddress 10.10.10.1 -PrefixLength 24
 ```
-
-** Ping ok **
-
-> @ WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED! 
->
->>Solution
->
->>  Pour voir l’entrée existante :
-```bash 
-ssh-keygen -F 192.168.56.10
-```
->> Pour supprimer l’ancienne clé :
-
-```bash
-ssh-keygen -R 192.168.56.10
-```
-
-** connexion ssh **
-
-
-
->Commande utile 
-Vérifier si l'adresse est statique
-```bash
-nmcli con show internal | grep ipv4.method
-nmcli con show hostonly | grep ipv4.method
-```
-
-> Reconnecte
->
->>ssh centosbdd@192.168.56.10
-
-# Configuration Windows server 2022 (eval)
-
-## Configuration Virtualbox
-
-- interface Nat 
-- Ethernet 2 : reseau interne
-- Ethernet 3 : host-only
-
-###  interface host-only pour activer ssh
-
-> Activer NIC 3 et le rattacher au host-only
-
-```bash
-VBoxManage modifyvm "WindowsServer" --nic3 hostonly
-VBoxManage modifyvm "WindowsServer" --hostonlyadapter3 vboxnet0
-VBoxManage modifyvm "WindowsServer" --cableconnected3 on
-```
-
-## Connexion ssh 
-Vérification mac du port de l'hôte et windows
-
-## Ip statique
-
-- ubuntuserverweb : 192.168.10.10
-- centosbdd : 192.168.10.11
-- windowsserver2022 : 192.168.10.12 
-
-# Vérifier le reseau interne
-
-**  VM : IP dans le même subnet pour le réseau interne **
-
-> ubuntuserverweb : 192.168.10.10
->
->> inet 192.168.10.10
->
->> netmask 255.255.255.0
->
->> broadcast 192.168.10.255
  
-> windowsserver20222 :
->
->> Adresse IPv4. . . . . . . . . . . . . .: 192.168.10.12
->
->> Masque de sous-réseau. . . . . . . . . : 255.255.255.0
-> 
->> Passerelle par défaut. . . . . . . . . : 192.168.10.1
+- VLAN20 USERS
+```powershell
+New-NetIPAddress -InterfaceAlias "VLAN20-USERS" -IPAddress 10.10.20.1 -PrefixLength 24
+```
+
+# VLAN30 MANAGEMENT
+New-NetIPAddress -InterfaceAlias "VLAN30-MGMT" -IPAddress 10.10.30.1 -PrefixLength 24
 
 
 
-> centosbdd :  inet 192.168.10.11/24 brd 192.168.10.255 
->
->> inet 192.168.10.11
-> 
->> netmask 255.255.255.0 
->
->> broadcast 192.168.10.255
-
-## Véfication ssh
-
-> ssh ubuntuserverweb@192.168.56.10                                                                               
-> ssh centosbdd@192.168.56.11 
-> ssh Administrateur@192.168.56.12
 
 
-### Vérification reseau interne
 
-> nom du reseau : reseauInterne
 
-> Depuis Ubuntu : 
-```bash
-ping 192.168.10.11
-ping 192.168.10.12
+# ---------------------------
+# 4️⃣ Configurer NAT pour Internet via DHCP VirtualBox
+# ---------------------------
+Set-NetIPInterface -InterfaceAlias "NAT" -Dhcp Enabled
+# Remettre DNS VirtualBox pour NAT
+Set-DnsClientServerAddress -InterfaceAlias "NAT" -ServerAddresses 10.0.2.3
+
+# ---------------------------
+# 5️⃣ Vérification
+# ---------------------------
+Write-Host "`n=== Résultat IP ===`n"
+Get-NetIPAddress | Sort-Object InterfaceAlias | Format-Table InterfaceAlias,IPAddress,PrefixLength,DefaultGateway
+
+Write-Host "`n=== Test ping ===`n"
+ping 8.8.8.8
+ping google.com
+
+
+#---
+#Installer les rôles ADDS et DNS
+---
+```powershell 
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+Install-WindowsFeature DNS -IncludeManagementTools
+```
+
+-> Vérifier
+```powershell
+Get-WindowsFeature AD-Domain-Services,DNS
+```
+
+#---
+# Promouvoir le serveur en contrôleur de domaine
+#---
+
+- Après installation
+```powershell
+Import-Module ADDSDeployment
+```
+
+- Puis créer un nouveau domaine dans une nouvelle forêt :
+
+```powershell
+
+Install-ADDSForest `
+-DomainName "lab.local" `
+-CreateDnsDelegation:$false `
+-DatabasePath "C:\Windows\NTDS" `
+-LogPath "C:\Windows\NTDS" `
+-SysvolPath "C:\Windows\SYSVOL" `
+-InstallDns:$true `
+-Force:$true
+```
+
+#---
+# Vérifier le rôle AD et DNS
+#---
+
+```powershell
+Get-Service -Name NTDS, DNS
+```
+
+- Tester le DNS
+```powershell
+nslookup lab.local
 ```
 
 
 
-#### Résumé du réseau
 
->Kali (hôte)
->
->> Interface : host-Only
->
->> Ip : 192.168.56.1
->
->>Réseau : Host-Only
-
->Ubuntu server
->
->> Interface : enp0s9 
->
->>>Ip : 192.168.56.10
->
->>> Réseau : Host-Only
->
->> Interface enp0s8
->
->>> IP :  192.168.10.10
->
->>> Réseau : Internal Network 
-
->Centos 
-> 
->> Interface : enp0s9 
-> 
->>>Ip : 192.168.56.11 
-> 
->>> Réseau : Host-Only 
-> 
->> Interface enp0s8 
-> 
->>> IP :  192.168.10.11 
-> 
->>> Réseau : Internal Network 
-
-
-> Windows server 
-> 
->> Interface : Ethernet 3 
-> 
->>>Ip : 192.168.56.10 
-> 
->>> Réseau : Host-Only 
-> 
->> Interface Ethernet 2
-> 
->>> IP :  192.168.10.12 
-> 
->>> Réseau : Internal Network 
+- Résultat
+	- DC01
+	- DNS
+	- Active Directory
+	- corptech.local

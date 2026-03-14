@@ -1,10 +1,10 @@
 #!/bin/bash
 VBoxManage createvm \
-    --name "WS22" \
+    --name "WindowsServer2022" \
     --ostype "Windows2022_64" \
     --register
 
-VBoxManage modifyvm "WS22" \
+VBoxManage modifyvm "WindowsServer2022" \
     --memory 8192 \
     --cpus 2 \
     --chipset piix3 \
@@ -19,4 +19,4 @@ VBoxManage modifyvm "WS22" \
     --graphicscontroller vboxsvga \
     --accelerate3d on
   
-VBoxManage modifyvm "WS22" --pae on
+VBoxManage modifyvm "WindowsServer2022" --pae on
