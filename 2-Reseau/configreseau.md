@@ -1,4 +1,4 @@
-# WindowsServer2022
+*# WindowsServer2022
 ## Vbox
 ⚠️ La VM doit être éteinte.
 
@@ -134,28 +134,6 @@ New-NetIPAddress -InterfaceAlias "VLAN30-MGMT" -IPAddress 10.10.30.1 -PrefixLeng
 
 
 
-
-
-
-
-# ---------------------------
-# 4️⃣ Configurer NAT pour Internet via DHCP VirtualBox
-# ---------------------------
-Set-NetIPInterface -InterfaceAlias "NAT" -Dhcp Enabled
-# Remettre DNS VirtualBox pour NAT
-Set-DnsClientServerAddress -InterfaceAlias "NAT" -ServerAddresses 10.0.2.3
-
-# ---------------------------
-# 5️⃣ Vérification
-# ---------------------------
-Write-Host "`n=== Résultat IP ===`n"
-Get-NetIPAddress | Sort-Object InterfaceAlias | Format-Table InterfaceAlias,IPAddress,PrefixLength,DefaultGateway
-
-Write-Host "`n=== Test ping ===`n"
-ping 8.8.8.8
-ping google.com
-
-
 #---
 #Installer les rôles ADDS et DNS
 ---
@@ -206,10 +184,115 @@ nslookup lab.local
 ```
 
 
+#---
+#DCO1
+#---
+
+```powershell
+Remove-NetIPAddress -InterfaceAlias "VLAN10" -Confirm:$false
+```
+```powershell
+Rename-NetAdapter -Name "Ethernet 2" -NewName "DC01"
+```
 
 
-- Résultat
-	- DC01
-	- DNS
-	- Active Directory
-	- corptech.local
+#---
+#1️⃣ Vérifier l’interface réseau et le serveur DNS
+#---
+
+```powershell
+# Vérifier quelles adresses DNS sont configurées
+Get-DnsClientServerAddress -InterfaceAlias "DC01"
+
+# Vérifier la configuration IP
+Get-NetIPConfiguration -InterfaceAlias "DC01"
+```
+
+#---
+#2️⃣ Configurer DNS pour pointer sur GEN8 (10.10.10.1)
+#---
+
+```powershell
+# Définir le DNS principal sur GEN8
+Set-DnsClientServerAddress -InterfaceAlias "DC01" -ServerAddresses 10.10.10.1
+```
+
+
+#---
+# Tester la connectivité réseau avec GEN8 (sur windows Server)
+#---
+
+```powershell 
+# Ping du serveur principal
+ping 10.10.10.1
+
+# Test résolution DNS de lab.local via GEN8
+nslookup lab.local 10.10.10.1
+
+# Test des enregistrements SRV nécessaires pour AD
+nslookup -type=SRV _ldap._tcp.dc._msdcs.lab.local 10.10.10.1
+```
+
+#---
+# 4️⃣ Vérifier la découverte du contrôleur de domaine
+#---
+
+```powershell
+# Découvrir tous les DC du domaine
+Get-ADDomainController -Discover -DomainName lab.local | Format-List Name,IPv4Address,Site
+```
+-> ⚠ Ici, IPv4Address doit afficher 10.10.10.1 pour GEN8. Si vide, la découverte échoue encore.
+
+
+#---
+# 5️⃣ Vérifier la réplication AD (une fois que la découverte fonctionne)
+#---
+
+```powershell
+# Voir les partenaires de réplication pour DC01
+Get-ADReplicationPartnerMetadata -Target DC01 | Format-Table Server,LastReplicationSuccess,LastReplicationAttempt
+```
+
+#---
+# 6️⃣ Test final DNS et AD
+#---
+
+```powershell 
+# Vérifier que DC01 peut résoudre son domaine et les SRV
+nslookup lab.local
+nslookup _ldap._tcp.dc._msdcs.lab.local
+
+# Vérifier les infos du domaine
+Get-ADDomain
+Get-ADForest
+```
+
+```
+              lab.local
+
+         ┌─────────────────┐
+         │      GEN8       │
+         │  DC1 + DNS      │
+         │ 10.10.10.1      │
+         └────────┬────────┘
+                  │
+           Réplication AD
+                  │
+         ┌────────┴────────┐
+         │      DC01        │
+         │  DC2 + DNS      │
+         │ 10.10.10.10     │
+         └─────────────────┘
+```
+
+
+
+
+
+
+
+
+
+
+
+
