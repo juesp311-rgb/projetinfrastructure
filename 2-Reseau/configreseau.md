@@ -1,4 +1,4 @@
-*# WindowsServer2022
+ls*# WindowsServer2022
 ## Vbox
 ⚠️ La VM doit être éteinte.
 
