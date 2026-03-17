@@ -1,86 +1,4 @@
 # Active Directory Home Lab (System Admnistration)
-## Configuration Active Directory
-
-- VM1 Windows Server 2022  Serveur AD
-
-	- Interfaces réseau :
-
-		- VLAN20-USER → 10.10.20.1 (serveur DNS + passerelle pour VLAN20)
-
-		- VLAN30-MONITORING → 10.10.30.1
-
-		- NAT / SSH → accès Internet / administration
-
-	- Rôles installés : ADDS + DNS
-
-- VM Windows 10 CLIENT01 et CLIENT02
-
-	- Carte réseau connectée à VLAN20-USER
-
-	- IP statique ou DHCP dans le sous-réseau 10.10.20.0/24
-
-	- DNS → 10.10.20.1 (IP du serveur AD)
-
-- Communication :
-
-	- CLIENT01 / CLIENT02 → ping 10.10.20.1 ✅
-
-	- Serveur AD → ping VLAN20 clients ✅
-
-	- Serveur AD:  le routage VLAN30-MONITORING
-
-## Etapes Virtualbox
-- VM Windows 10 :
-
-	- Réseau → Activer un adaptateur
-
-	- Attacher à → Internal Network ou Réseau interne (nom = VLAN20-USER)
-
-	- Cette interface va se “connecter” uniquement à la VM1 (Windows Server) sur le même VLAN.
-
-- Configurer l’IP sur la VM :
-
-
-Réponse positive → VM peut joindre le serveur AD et sera prête à joindre le domaine.
-
-## Etapes 
-
--  → VM1  Windows Server 2022, contrôleur de domaine + DNS + passerelle VLAN20
-
-
-- Configurer VM2 dans VirtualBox
-
-	- Activer deux cartes réseau internes :
-
-		- Adaptateur 1 → VLAN20-USER (simule CLIENT01)
-
-		- Adaptateur 2 → VLAN20-USER (simule CLIENT02)
-
-- Attribuer une IP statique à chaque interface
-
-	- Interface CLIENT01 :
-
-		- IP : 10.10.20.10
-
-		- Masque : 255.255.255.0
-
-		- Passerelle : 10.10.20.1 (serveur AD)
-
-		- DNS : 10.10.20.1	
-
-	- Interface CLIENT02 :
-
-		- IP : 10.10.20.11
-
-		- Masque : 255.255.255.0
-
-		- Passerelle : 10.10.20.1
-
-		- DNS : 10.10.20.1
-
-Vérifier la connectivité
-Depuis VM2 (pour chaque interface) :
-
 
 ## Commandes installation AD DS
 
@@ -89,6 +7,9 @@ Depuis VM2 (pour chaque interface) :
 ```bash 
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 ```
+et 
+``` Install DNS ...```
+
 
 - Crée la forêt et le domaine
 	- Forest : corptech.com
@@ -123,11 +44,12 @@ C’est une sécurité entreprise contre les rogue DHCP.
 
 
 - Vérifier
+
 ```powershell
 Get-DhcpServerInDC
 ```
-	- Résultat attendu :
-	> dc01.ad.corptech.com   10.10.10.10
+> Résultat attendu :
+> dc01.ad.corptech.com   10.10.10.10
 
 - Créer les ordinateurs dans AD (sur VM1)
 ```powershell 
@@ -153,7 +75,9 @@ Get-ADComputer -Filter * | Select Name
 >
 >WIN-2FVON6A0R35   (ton contrôleur de domaine)
 
+
 - Tester la communication avec le serveur AD
+
 ```powershell
 ping 10.10.20.1
 ```
@@ -180,95 +104,18 @@ nslookup corptech.local 10.10.20.1
 
 
 
-Astuce pour les labs
-
-Pour réinitialiser complètement une interface avant de lui mettre une nouvelle IP + gateway + DNS, tu peux faire :
-
-# Supprimer toutes les IP
-Get-NetIPAddress -InterfaceAlias "DC" | Remove-NetIPAddress -Confirm:$false
-
-# Supprimer toutes les routes associées
-Get-NetRoute -InterfaceAlias "DC" | Remove-NetRoute -Confirm:$false
-
-# Reset DNS
-Set-DnsClientServerAddress -InterfaceAlias "DC" -ResetServerAddresses
-
-Puis faire New-NetIPAddress avec ta nouvelle configuration.
-
-1️⃣ Configurer l’IP et la passerelle
-New-NetIPAddress `
-    -InterfaceAlias "DC" `
-    -IPAddress 10.10.30.2 `
-    -PrefixLength 24 `
-    -DefaultGateway 10.10.30.1
-
-InterfaceAlias : nom exact de l’interface
-
-IPAddress : nouvelle IP de l’interface
-
-PrefixLength : 24 pour masque 255.255.255.0
-
-DefaultGateway : passerelle VLAN correspondante
-
-2️⃣ Configurer le DNS
-Set-DnsClientServerAddress `
-    -InterfaceAlias "DC" `
-    -ServerAddresses 10.10.30.1
-
-Le DNS doit être ton serveur AD pour que la jonction au domaine fonctionne.
-
-3️⃣ Vérification
-# Vérifier IP et passerelle
-Get-NetIPAddress -InterfaceAlias "DC"
-
-# Vérifier DNS
-Get-DnsClientServerAddress -InterfaceAlias "DC"
-
-# Vérifier routes
-Get-NetRoute -InterfaceAlias "DC"
-
-Tu dois voir :
-
-IP : 10.10.30.2/24
-
-Gateway : 10.10.30.1
-
-DNS : 10.10.30.1
-
-💡 Astuce pour ton lab :
-Après ça, teste toujours la connectivité avec le serveur AD :
-
-ping 10.10.30.1
-nslookup corptech.local 10.10.30.1
-
-
-
-1️⃣ Vérifier si le module est disponible
-Get-Module -ListAvailable
-
-Tu devrais voir un module appelé ActiveDirectory
-
-Si tu ne le vois pas, il faut installer le rôle RSAT ou ADDS Tools.
-
-2️⃣ Installer le module (si nécessaire)
-
-Sur Windows Server 2022 (ta VM DC) :
 
 # Installer les outils AD
+---
+
+```
 Install-WindowsFeature RSAT-AD-PowerShell
 
-Après l’installation, tu peux vérifier :
+```
 
-Import-Module ActiveDirectory
 
-Ensuite la commande fonctionne :
 
-Get-ADComputer -Filter * | Select-Object Name
-3️⃣ Astuce
 
-Sur un client Windows 10, il faut installer RSAT pour Active Directory avant de pouvoir utiliser Get-ADComputer.
-
-Sur une VM serveur jointe au domaine, le module devrait déjà être disponible après avoir installé ADDS / RSAT.
 
 
 
