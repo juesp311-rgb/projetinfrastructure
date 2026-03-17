@@ -59,6 +59,13 @@ Get-DhcpServerInDC
 > Résultat attendu :
 > dc01.ad.corptech.com   10.10.10.10
 
+
+- Joindre une  machine au domaine
+        - Sur CLIENT01 :
+```powershell
+Add-Computer -DomainName corptech.local -Credential corptech.local\Administrateur -Restart
+```
+
 - Créer les ordinateurs dans AD (sur VM1)
 
 ```powershell 
@@ -90,17 +97,14 @@ nslookup corptech.local
 ```
 
 
-- Joindre une  machine au domaine 
-	- Sur CLIENT01 :
-```powershell
-Add-Computer -DomainName corptech.local -Credential corptech.local\Administrateur -Restart
-```
-Configure et vérifie le DNS
+- Configure et vérifie le DNS
+
 ```powershell
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 10.10.20.1
 ```
 
 - Tester directement ton DNS Active Directory
+
 ```powershell
 nslookup corptech.local 10.10.20.1
 ```
