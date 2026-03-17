@@ -3,14 +3,13 @@
 ## Commandes installation AD DS
 
 ###  VM1 Windows Server 2022
-- Install ADDS
+- Installer les roles ADDS et DNS
+
 ```bash 
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
-```
-et 
-``` Install DNS ...
-```
 
+Install-WindowsFeature DNS -IncludeManagementTools
+```
 
 - Crée la forêt et le domaine
 	- Forest : corptech.com
