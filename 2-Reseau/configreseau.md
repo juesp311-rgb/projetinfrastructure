@@ -11,18 +11,22 @@ Get-NetAdpater
 
 - Crée 3  interface réseau interne "intnet"
 	- VLAN 10
+
 ```bash 
 VBoxManage modifyvm "WindowsServer2022" \
 --nic2 intnet \
 --intnet2 "VLAN10"
 ```
+
 	- VLAN20
+
 ```bash
 VBoxManage modifyvm "WindowsServer2022" \
 --nic3 intnet \
 --intnet3 "VLAN20"
 ```
 	- VLAN30
+
 ```bash
 VBoxManage modifyvm "WindowsServer2022" \
 --nic4 intnet \
@@ -30,42 +34,45 @@ VBoxManage modifyvm "WindowsServer2022" \
 ```
 
 - Vérifier la configuration réseau
+
 ```bash
 VBoxManage showvminfo "WindowsServer2022" | grep -i NIC
 ```
 
----
 # Installer OpenSSH Server
 ---
 
 ```powershell
 Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 ```
+
 - Démarrer le servcice SSH
----
+
 ```powershell
 Start-Service sshd
 ```
 - Activer le démarrage automatique
----
+
 ```powershell
 Set-Service -Name sshd -StartupType Automatic
 ```
 
 
 - Vérifier que le service fonctionne
----
+
 ```powershell
 Get-Service sshd
 ```
 
 - Autoriser SSH dans le firewall
----
-- Vérifier
+	- Vérifier
+
 ```powershell
 Get-NetFirewallRule -Name *ssh*
 ```
+
 - Sinon
+
 ```powershell
 New-NetFirewallRule -Name sshd `
 -DisplayName "OpenSSH Server" `
@@ -76,14 +83,14 @@ New-NetFirewallRule -Name sshd `
 -LocalPort 22
 ```
 
-#Tester la connexion SSH
----
+- Tester la connexion SSH
 
 ```powershell
 ssh Administrateur@10.10.30.10
 ```
-# Vérifier que le port SSH écoute
----
+
+- Vérifier que le port SSH écoute
+
 ```powershell
 netstat -an | findstr :22
 ```
@@ -92,7 +99,8 @@ netstat -an | findstr :22
 # Configure les interfaces réseaux
 ---
 
-- 1️⃣ Renommer les interfaces
+-  Renommer les interfaces
+
 ```powershell
 Rename-NetAdapter -Name "Ethernet" -NewName "NAT"
 Rename-NetAdapter -Name "Ethernet 2" -NewName "VLAN10-SERVERS"
@@ -101,15 +109,14 @@ Rename-NetAdapter -Name "Ethernet 4" -NewName "VLAN30-MGMT"
 ```
 
 - Supprimer les anciennes addresse APIPA
----
+
 ```powershell
 Remove-NetIPAddress -InterfaceAlias "VLAN10" -Confirm:$false
 ```
 
-- 3️⃣ Configure IP statique
----
+-  Configure IP statique
 
--  VLAN10 SERVERS
+
 ```powershell
 New-NetIPAddress -InterfaceAlias "VLAN10-SERVERS" -IPAddress 10.10.10.1 -PrefixLength 24
 ```
@@ -118,6 +125,7 @@ New-NetIPAddress -InterfaceAlias "VLAN10-SERVERS" -IPAddress 10.10.10.1 -PrefixL
 
 # Configure Active Diretory
 ---
+
 - Installer les rôles ADDS et DNS
 
 ```powershell 
@@ -125,14 +133,16 @@ Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 Install-WindowsFeature DNS -IncludeManagementTools
 ```
 
--> Vérifier
+> Vérifier
+
 ```powershell
 Get-WindowsFeature AD-Domain-Services,DNS
 ```
 
 - Promouvoir le serveur en contrôleur de domaine
 
--> Après installation
+> Après installation
+
 ```powershell
 Import-Module ADDSDeployment
 ```
