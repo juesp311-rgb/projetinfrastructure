@@ -173,7 +173,63 @@ nslookup lab.local
 ```
 
 
-# Configure un deuxime contrpleur domaine DCO1
+# 🧩 Étapes pour joindre CLIENT01 au domaine lab.local
+---
+
+- Pré-requis 
+	- Configure réseau interne sur Vbox
+	- Rename Computer, Interface
+	- Ip statique 
+
+- 1️⃣ Configurer le DNS 
+
+```
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 10.10.10.1
+```
+
+- 2️⃣ Tester la résolution du domaine
+
+``` nslookup lab.local ```
+> 👉 Tu dois voir l’IP 10.10.10.1
+
+
+- 3️⃣ Ajouter la machine au domaine
+```
+$cred = Get-Credential
+Add-Computer -DomainName "lab.local" -Credential $cred -Restart
+```
+
+> 👉 Quand la fenêtre apparaît, entre :
+>
+>lab\Administrateur
+>
+> - mot de passe
+>
+>👉 La machine va redémarrer automatiquement.
+
+
+- 5️⃣ Vérifier que ça a fonctionné
+```
+(Get-WmiObject Win32_ComputerSystem).Domain
+
+
+- 6️⃣ Vérifier côté contrôleur de domaine
+> Sur ton serveur :
+
+```powsershell
+Get-ADComputer -Identity CLIENT01
+```
+
+> 🔧 Problèmes fréquents
+>
+>>❌ DNS mal configuré → impossible de joindre le domaine
+>
+>>❌ Heure différente de plus de 5 min → échec d’authentification
+
+
+
+
+# Configure un deuxième contrôleur de  domaine DCO1
 ---
 
 ```
