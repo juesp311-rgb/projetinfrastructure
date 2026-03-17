@@ -8,30 +8,38 @@
 Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
 ```
 et 
-``` Install DNS ...```
+``` Install DNS ...
+```
 
 
 - Crée la forêt et le domaine
 	- Forest : corptech.com
 	- Domain : ad.corptech.com
 
-```powershell 
+
+```powershell
+ 
 Install-ADDSForest `
 -DomainName "ad.corptech.com" `
 -DomainNetbiosName "CORPTECH" `
 -InstallDns `
 -SafeModeAdministratorPassword (Read-Host -AsSecureString "DSRM Password") `
--Force```
+-Force
+
+```
+
 
 **Le serveur va créer la forêt, créer le domaine, installer DNS, devenir Domain Controller, puis redémarrer**
 
 
 - Installer DHCP
+
 ```powershell
 Install-WindowsFeature DHCP -IncludeManagementTools
 ```
 
-	- Autoriser DHCP dans Active Directory
+- Autoriser DHCP dans Active Directory
+
 ```powershell 
 Add-DhcpServerInDC `
 -DnsName "dc01.ad.corptech.com" `
@@ -52,6 +60,7 @@ Get-DhcpServerInDC
 > dc01.ad.corptech.com   10.10.10.10
 
 - Créer les ordinateurs dans AD (sur VM1)
+
 ```powershell 
 New-ADComputer -Name "CLIENT01" -SamAccountName "CLIENT01" -Path "CN=Computers,DC=corptech,DC=local" -Enabled $true
 New-ADComputer -Name "CLIENT02" -SamAccountName "CLIENT02" -Path "CN=Computers,DC=corptech,DC=local" -Enabled $true
@@ -66,13 +75,8 @@ Get-ADComputer -Filter * | Select Name
 >Tu devrais voir :
 >
 >Name
->
->----
->
 >CLIENT01
->
 >CLIENT02
->
 >WIN-2FVON6A0R35   (ton contrôleur de domaine)
 
 
@@ -84,9 +88,9 @@ ping 10.10.20.1
 ```powershell
 nslookup corptech.local
 ```
--> failed
 
-- Joindre la machine au domaine 
+
+- Joindre une  machine au domaine 
 	- Sur CLIENT01 :
 ```powershell
 Add-Computer -DomainName corptech.local -Credential corptech.local\Administrateur -Restart
