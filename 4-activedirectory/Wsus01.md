@@ -1,6 +1,6 @@
 # WSUS01
 ---
-
+- VMName = FILE01
 
 ```powershell
 # Installer WSUS
