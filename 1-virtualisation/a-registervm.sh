@@ -1,10 +1,10 @@
 #!/bin/bash
 VBoxManage createvm \
-    --name "CLIENT01" \
+    --name "DC01" \
     --ostype "Windows2022_64" \
     --register
 
-VBoxManage modifyvm "CLIENT01" \
+VBoxManage modifyvm "DC01" \
     --memory 4096 \
     --cpus 2 \
     --chipset piix3 \
@@ -19,4 +19,4 @@ VBoxManage modifyvm "CLIENT01" \
     --graphicscontroller vboxsvga \
     --accelerate3d on
   
-VBoxManage modifyvm "CLIENT01" --pae on
+VBoxManage modifyvm "DC01" --pae on
