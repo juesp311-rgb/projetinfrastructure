@@ -1,8 +1,8 @@
 #!/bin/bash
 
-VM_NAME="DC01"
+VM_NAME="VLAN20-USERS"
 VDI_PATH="$HOME/VirtualBox VMs/$VM_NAME/$VM_NAME.vdi"
-ISO_PATH="$HOME/isooperatingsystem/DC01.iso"
+ISO_PATH="$HOME/isooperatingsystem/VLAN20-USERS.iso"
 
 
 # 3️⃣ Créer le disque dur VDI
@@ -35,7 +35,7 @@ VBoxManage storageattach "$VM_NAME" \
 
 
 
-VBoxManage modifyvm "DC01" \
+VBoxManage modifyvm "VLAN20-USERS" \
 --boot1 dvd \
 --boot2 disk \
 --boot3 none \

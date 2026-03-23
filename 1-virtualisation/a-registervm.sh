@@ -1,10 +1,10 @@
 #!/bin/bash
 VBoxManage createvm \
-    --name "DC01" \
+    --name "VLAN20-USERS" \
     --ostype "Windows2022_64" \
     --register
 
-VBoxManage modifyvm "DC01" \
+VBoxManage modifyvm "VLAN20-USERS" \
     --memory 4096 \
     --cpus 2 \
     --chipset piix3 \
@@ -19,4 +19,4 @@ VBoxManage modifyvm "DC01" \
     --graphicscontroller vboxsvga \
     --accelerate3d on
   
-VBoxManage modifyvm "DC01" --pae on
+VBoxManage modifyvm "VLAN20-USERS" --pae on

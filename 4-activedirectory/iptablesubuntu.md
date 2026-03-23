@@ -123,8 +123,57 @@ nslookup lab.local
 ```
 
 
+- Après redemarrage : failed 
+	- probleme au niveau routage linux
+```
+sudo sysctl net.ipv4.ip_forward
+# doit afficher 1 mais affiche 0
+```
+
+	- Probleme firewall VLANUSERS
+
+```
+# Depuis VLAN-20USERS et DC (Windows)
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False
+
+
+# Autoriser ICMP ping entrant
+netsh advfirewall firewall add rule name="Allow ICMPv4" protocol=icmpv4 dir=in action=allow
+
+
+# Autoriser ICMP ping entrant et sortant
+netsh advfirewall firewall add rule name="Allow ICMPv4" protocol=icmpv4 dir=in action=allow
+netsh advfirewall firewall add rule name="Allow ICMPv4 Out" protocol=icmpv4 dir=out action=allow
+
+
+
+```
+- Modificiation fichier pour  Persisistance ipforward = 1
+ 
+```
+# creation du dossier mkdir -p sysctl.d
+sudo nano /etc/sysctl.d/99-lab-routing.conf
+# Uncomment net.ipv4.ip_froward = 1
+```
+
+- Pb lors vérification routes 
+> la route ne poite pas vers 10.10.10.254 mais sur l'interface Nat
+```
+# 1️⃣ Supprime route
+Get-NetRoute | Where-Object {$_.InterfaceAlias -eq "Ethernet 2"} | Remove-NetRoute -Confirm:$false
+- ping Ok
+
+# 2️⃣ Ajouter la route correcte vers ton routeur Linux
+
+New-NetRoute -InterfaceAlias "VLAN10" `
+    -DestinationPrefix 0.0.0.0/0 `
+    -NextHop 10.10.10.254 `
+    -RouteMetric 10
 
 
 
 
 
+```
+Get-NetRoute -AddressFamily IPv4 | Format-Table DestinationPrefix,NextHop,InterfaceAlias,RouteMetric
+```
