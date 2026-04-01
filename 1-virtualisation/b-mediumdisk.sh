@@ -1,8 +1,8 @@
 #!/bin/bash
 
-VM_NAME="VLAN20-USERS"
+VM_NAME="SRV-AD-01"
 VDI_PATH="$HOME/VirtualBox VMs/$VM_NAME/$VM_NAME.vdi"
-ISO_PATH="$HOME/isooperatingsystem/VLAN20-USERS.iso"
+ISO_PATH="$HOME/isooperatingsystem/SRV-AD-01.iso"
 
 
 # 3️⃣ Créer le disque dur VDI
@@ -35,7 +35,7 @@ VBoxManage storageattach "$VM_NAME" \
 
 
 
-VBoxManage modifyvm "VLAN20-USERS" \
+VBoxManage modifyvm "SRV-AD-01" \
 --boot1 dvd \
 --boot2 disk \
 --boot3 none \
