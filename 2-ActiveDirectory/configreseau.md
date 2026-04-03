@@ -192,13 +192,11 @@ Win10-Client2 : 192.168.56.22  ✅ hors plage DHCP
 > ⚠️ Piège classique : mettre une IP statique dans la plage DHCP risque un conflit d'adresse si le DHCP l'attribue à une autre machine.
 
 ----
-----
-----
 
 ## Configure Windows 10 Pro (Client)
 ---
 
-### Étape 5 — Installation de Win10-Client1
+- Pré-requis :  Installation de Win10-Client1
 
 ```
 
@@ -210,7 +208,6 @@ Win10-Client2 : 192.168.56.22  ✅ hors plage DHCP
 
 ```
 
-## Configuration  Win10-Client2
 
 - Étape 1 — Vérifier l'interface réseau
 
@@ -356,29 +353,13 @@ Get-ADComputer -Filter * | Select-Object Name
 >
 
 
+Prochaines étapes possibles
 
+```
+1. Créer des utilisateurs AD
+2. Créer des groupes et des UO (Unités d'Organisation)
+3. Configurer des GPO (stratégies de groupe)
+4. Configurer des dossiers partagés
+5. Configurer des profils itinérants
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
