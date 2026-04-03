@@ -28,12 +28,32 @@ VBoxManage closemedium disk 9f30b322-5aa3-445d-be9a-3ed6700092e4 --delete
 
 ## Lancer les scripts
 
-- a-registervm.sh
-- b-mediumdisk.sh
-- c-startvm.sh
+- 1-create.vm.sh
+- b-detach-iso.sh
+- c-deploy-all.sh
 
+- La seule chose à vérifier/adapter
+	- Dans deploy-all.sh,
+		-  ces deux lignes pointent vers vos ISOs — 
+		- vérifiez que les chemins et noms de fichiers correspondent 
 
 ## Commandes utiles de Virtualbox
+
+``` VBoxManage list ostypes | grep -i "windows10" ```
+
+
+
+- Supprimer les VMs existantes (remplacez les noms si différents)
+```
+VBoxManage unregistervm "AD-Server"     --delete
+
+# Si des doublons existent, listez par UUID et supprimez
+VBoxManage list vms
+# puis : VBoxManage unregistervm {uuid-exact} --delete
+
+```
+
+
 
 > Liste Vm
 

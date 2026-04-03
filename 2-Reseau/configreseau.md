@@ -1,254 +1,375 @@
-# WindowsServer2022
-## Vbox
-⚠️ La VM doit être éteinte.
+# Configuration PowerShell AD DS — Windows Server 2022
 
-Vérifier les interfaces reseaux
-
-```bash
-Get-NetAdpater
-```
->- Interface NAT = 10.0.2.2
-
-- Crée 3  interface réseau interne "intnet"
-	- VLAN 10
-
-```bash 
-VBoxManage modifyvm "WindowsServer2022" \
---nic2 intnet \
---intnet2 "VLAN10"
-```
-
-	- VLAN20
-
-```bash
-VBoxManage modifyvm "WindowsServer2022" \
---nic3 intnet \
---intnet3 "VLAN20"
-```
-	- VLAN30
-
-```bash
-VBoxManage modifyvm "WindowsServer2022" \
---nic4 intnet \
---intnet4 "VLAN30"
-```
-
-- Vérifier la configuration réseau
-
-```bash
-VBoxManage showvminfo "WindowsServer2022" | grep -i NIC
-```
-
-# Installer OpenSSH Server
+## Configure Windows Server 2022
 ---
 
-```powershell
-Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+
+
+### Étape 1 — IP fixe + renommage
+
+- 1. Vérifier le nom de l'interface réseau
+``` Get-NetAdapter ```
+
+
+
+-  2. Configurer l'IP fixe sur l'interface Host-Only
+
 ```
 
-- Démarrer le servcice SSH
+New-NetIPAddress `
+    -InterfaceAlias "Ethernet" `
+    -IPAddress "192.168.56.10" `
+    -PrefixLength 24 `
+    -DefaultGateway "192.168.56.1"
 
-```powershell
-Start-Service sshd
-```
-- Activer le démarrage automatique
-
-```powershell
-Set-Service -Name sshd -StartupType Automatic
 ```
 
+- 3. Configurer le DNS
 
-- Vérifier que le service fonctionne
-
-```powershell
-Get-Service sshd
 ```
 
-- Autoriser SSH dans le firewall
-	- Vérifier
+Set-DnsClientServerAddress `
+    -InterfaceAlias "Ethernet" `
+    -ServerAddresses "127.0.0.1"
 
-```powershell
-Get-NetFirewallRule -Name *ssh*
 ```
 
-- Sinon
+- 4. Renommer le serveur
 
-```powershell
-New-NetFirewallRule -Name sshd `
--DisplayName "OpenSSH Server" `
--Enabled True `
--Direction Inbound `
--Protocol TCP `
--Action Allow `
--LocalPort 22
 ```
 
-- Tester la connexion SSH
+Rename-Computer -NewName "AD-Server" -Force
 
-```powershell
-ssh Administrateur@10.10.30.10
 ```
 
-- Vérifier que le port SSH écoute
+5. Redémarrer
 
-```powershell
-netstat -an | findstr :22
+```
+Restart-Computer -Force
+
 ```
 
+### Étape 2 — Installation du rôle AD DS
 
-# Configure les interfaces réseaux
----
 
--  Renommer les interfaces
 
-```powershell
-Rename-NetAdapter -Name "Ethernet" -NewName "NAT"
-Rename-NetAdapter -Name "Ethernet 2" -NewName "VLAN10-SERVERS"
-Rename-NetAdapter -Name "Ethernet 3" -NewName "VLAN20-USERS"
-Rename-NetAdapter -Name "Ethernet 4" -NewName "VLAN30-MGMT"
+- 1. Installer le rôle AD DS
+
 ```
 
-- Supprimer les anciennes addresse APIPA
+Install-WindowsFeature `
+    -Name AD-Domain-Services `
+    -IncludeManagementTools
 
-```powershell
-Remove-NetIPAddress -InterfaceAlias "VLAN10" -Confirm:$false
 ```
 
--  Configure IP statique
+- 2. Vérifier l'installation
 
-
-```powershell
-New-NetIPAddress -InterfaceAlias "VLAN10-SERVERS" -IPAddress 10.10.10.1 -PrefixLength 24
-```
- 
-
-
-# Configure Active Diretory
----
-
-- Installer les rôles ADDS et DNS
-
-```powershell 
-Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
-Install-WindowsFeature DNS -IncludeManagementTools
 ```
 
-> Vérifier
-
-```powershell
-Get-WindowsFeature AD-Domain-Services,DNS
+Get-WindowsFeature AD-Domain-Services
 ```
 
-- Promouvoir le serveur en contrôleur de domaine
+### Étape 3 — Promotion en contrôleur de domaine
 
-> Après installation
+- 1. Importer le module AD DS
 
-```powershell
+```
+
 Import-Module ADDSDeployment
+
 ```
 
-- Puis créer un nouveau domaine dans une nouvelle forêt :
+- 2. Promouvoir le serveur en DC
 
-```powershell
+```
 
 Install-ADDSForest `
--DomainName "lab.local" `
--CreateDnsDelegation:$false `
--DatabasePath "C:\Windows\NTDS" `
--LogPath "C:\Windows\NTDS" `
--SysvolPath "C:\Windows\SYSVOL" `
--InstallDns:$true `
--Force:$true
-```
+    -DomainName "monlabo.local" `
+    -DomainNetbiosName "MONLABO" `
+    -ForestMode "WinThreshold" `
+    -DomainMode "WinThreshold" `
+    -InstallDns:$true `
+    -DatabasePath "C:\Windows\NTDS" `
+    -LogPath "C:\Windows\NTDS" `
+    -SysvolPath "C:\Windows\SYSVOL" `
+    -SafeModeAdministratorPassword (ConvertTo-SecureString "Azerty123!" -AsPlainText -Force) `
+    -Force:$true
 
-- Vérifier le rôle AD et DNS
-
-```powershell
-Get-Service -Name NTDS, DNS
-```
-
-- Tester le DNS
-```powershell
-nslookup lab.local
 ```
 
 
-# 🧩 Étapes pour joindre CLIENT01 au domaine lab.local
+- 3. Après le redémarrage, vérifier que l'AD est actif
+
+```
+ Get-ADDomain
+
+  ```
+
+### Étape 4 — Configuration DHCP
+
+
+- 1. Installer le rôle DHCP
+
+```
+
+Install-WindowsFeature -Name DHCP -IncludeManagementTools
+
+```
+
+- 2. Autoriser le serveur DHCP dans l'AD
+
+```
+Add-DhcpServerInDC -DnsName "AD-Server.monlabo.local" -IPAddress 192.168.56.10
+
+```
+
+- 3. Créer l'étendue DHCP
+
+```
+
+Add-DhcpServerv4Scope `
+    -Name "LAN Host-Only" `
+    -StartRange "192.168.56.100" `
+    -EndRange "192.168.56.200" `
+    -SubnetMask "255.255.255.0" `
+    -State Active
+
+```
+
+- 4. Configurer les options DHCP
+
+```
+Set-DhcpServerv4OptionValue `
+    -ScopeId "192.168.56.0" `
+    -Router "192.168.56.1" `
+    -DnsServer "192.168.56.10" `
+    -DnsDomain "monlabo.local"
+
+```
+
+- 5. Exclure les IPs réservées
+
+```
+
+Add-DhcpServerv4ExclusionRange `
+    -ScopeId "192.168.56.0" `
+    -StartRange "192.168.56.1" `
+    -EndRange "192.168.56.20"
+
+```
+
+- 6. Vérifier
+
+```
+Get-DhcpServerv4Scope
+
+```
+
+### La bonne approche avant de configurer l'IP statique
+
+```
+Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4
+
+
+Puis **choisissez une IP statique cohérente** avec votre réseau `192.168.56.0/24` en dehors de la plage DHCP qu'on a définie :
+
+Plage DHCP réservée : 192.168.56.100 → 192.168.56.200
+IPs exclues         : 192.168.56.1   → 192.168.56.20
+
+✅ IPs statiques disponibles pour les clients :
+   192.168.56.21 → 192.168.56.99
+
+
+## Donc les IPs statiques plus prudentes seraient
+
+AD-Server     : 192.168.56.10  ✅ (déjà configuré)
+Win10-Client1 : 192.168.56.21  ✅ hors plage DHCP
+Win10-Client2 : 192.168.56.22  ✅ hors plage DHCP
+
+```
+
+> ⚠️ Piège classique : mettre une IP statique dans la plage DHCP risque un conflit d'adresse si le DHCP l'attribue à une autre machine.
+
+----
+----
+----
+
+## Configure Windows 10 Pro (Client)
 ---
 
-- Pré-requis 
-	- Configure réseau interne sur Vbox
-	- Rename Computer, Interface
-	- Ip statique 
-
-- 1️⃣ Configurer le DNS 
+### Étape 5 — Installation de Win10-Client1
 
 ```
-Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 10.10.10.1
+
+1. Cliquez "Configurer pour une organisation"  
+   ou "Domain join instead" en bas à gauche
+2. Créez un compte local :
+   - Nom : LocalAdmin
+   - Mot de passe : 
+
 ```
 
-- 2️⃣ Tester la résolution du domaine
+## Configuration  Win10-Client2
 
-``` nslookup lab.local ```
-> 👉 Tu dois voir l’IP 10.10.10.1
+- Étape 1 — Vérifier l'interface réseau
 
-
-- 3️⃣ Ajouter la machine au domaine
-```
-$cred = Get-Credential
-Add-Computer -DomainName "lab.local" -Credential $cred -Restart
 ```
 
-> 👉 Quand la fenêtre apparaît, entre :
+Get-NetAdapter
+
+```
+
+> Interface 1 = Reseau privé hote
+> Interface 2 = NAT
+
+- Étape 2 — Renommer la machine
+
+```
+
+Rename-Computer -NewName "Win10-Client2" -Force
+
+```
+
+- Étape 3 — Redémarrer pour appliquer le nom
+
+```
+Restart-Computer -Force
+
+```
+
+- Étape 4 — Supprimer l'IP DHCP actuelle
+
+```
+
+Remove-NetIPAddress -InterfaceAlias "Ethernet" -Confirm:$false
+
+```
+
+- Étape 5 — Supprimer la passerelle actuelle
+
+```
+
+Remove-NetRoute -InterfaceAlias "Ethernet" -Confirm:$false
+
+```
+
+- Étape 6 — Configurer l'IP statique
+
+```
+
+New-NetIPAddress `
+    -InterfaceAlias "Ethernet" `
+    -IPAddress "192.168.56.22" `
+    -PrefixLength 24 `
+    -DefaultGateway "192.168.56.1"
+
+```
+
+- Étape 7 — Configurer le DNS vers AD-Server
+
+```
+Set-DnsClientServerAddress `
+    -InterfaceAlias "Ethernet" `
+    -ServerAddresses "192.168.56.10"
+
+```
+
+- Étape 8 — Vérifier la configuration réseau
+
+```
+Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4
+
+```
+
+> Doit afficher 192.168.56.22
+
+```
+Get-DnsClientServerAddress -InterfaceAlias "Ethernet"
+
+```
+> Doit afficher 192.168.56.10
+
+
+
+- Étape 9 — Tester la connectivité avec AD-Server
+
+```
+Test-Connection 192.168.56.10
+
+```
+
+- Étape 10 — Synchronisation du temps
+
+``` 
+Start-Service W32Time
+```
+
+
+```
+w32tm /config /manualpeerlist:"192.168.56.10" /syncfromflags:manual /update
+```
+
+```
+
+w32tm /resync /force
+
+```
+
+```
+w32tm /stripchart /computer:192.168.56.10 /samples:3
+
+
+```
+> L'écart doit être inférieur à 5 minutes, idéalement quelques secondes
+
+- Étape 11 — Rejoindre le domaine
+
+```
+Add-Computer `
+    -DomainName "monlabo.local" `
+    -Credential (Get-Credential) `
+    -Restart -Force
+
+```
+
+> Une fenêtre s'ouvre, entrez :
 >
->lab\Administrateur
+>>Utilisateur : MONLABO\Administrateur
+>>Mot de passe : Azerty123!
 >
-> - mot de passe
->
->👉 La machine va redémarrer automatiquement.
 
+- Étape 12 — Vérifier sur AD-Server après redémarrage
 
-- 5️⃣ Vérifier que ça a fonctionné
-```
-(Get-WmiObject Win32_ComputerSystem).Domain
-
-
-- 6️⃣ Vérifier côté contrôleur de domaine
-> Sur ton serveur :
-
-```powsershell
-Get-ADComputer -Identity CLIENT01
 ```
 
-> 🔧 Problèmes fréquents
->
->>❌ DNS mal configuré → impossible de joindre le domaine
->
->>❌ Heure différente de plus de 5 min → échec d’authentification
-
-
-
-
-# Configure un deuxième contrôleur de  domaine DCO1
----
+Get-ADComputer -Filter * | Select-Object Name
 
 ```
-              lab.local
 
-         ┌─────────────────┐
-         │      GEN8       │
-         │  DC1 + DNS      │
-         │ 10.10.10.1      │
-         └────────┬────────┘
-                  │
-           Réplication AD
-                  │
-         ┌────────┴────────┐
-         │      DC01        │
-         │  DC2 + DNS      │
-         │ 10.10.10.10     │
-         └─────────────────┘
-```
+> Doit afficher :
+>> Name
+>>----
+>>AD-Server
+>>Win10-Client1
+>>Win10-Client2
+>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

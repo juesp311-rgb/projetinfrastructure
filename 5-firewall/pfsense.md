@@ -137,3 +137,147 @@ DNS : 192.168.10.10
 
 
 ## Création de ta VM Windows Server
+
+- ⚙️ 1. Vérifier et renommer l’adaptateur réseau
+
+```
+Get-NetAdapter
+Rename-NetAdapter -Name "Ethernet" -NewName "LAN"
+
+```
+- 🌐 2. Configurer IP statique
+
+```
+New-NetIPAddress `
+-InterfaceAlias "LAN" `
+-IPAdress 192.168.10.20 `
+-PrefixLength 24 `
+-DefaultGateway 192.168.10.10
+```
+
+> 🔹 Supprimer DHCP (si actif)
+>
+>> ``` Set-NetIPInterface -InterfaceAlias "LAN" -Dhcp Disabled ```
+
+
+- 🔹 Config DNS (IMPORTANT)
+> 👉 Avant AD, tu peux temporairement mettre pfSense :
+
+```
+
+Set-DnsClientServerAddress `
+-InterfaceAlias "LAN" `
+-ServerAddresses 192.168.10.10
+
+```
+
+- 🧪 3. Tests réseau
+
+```
+
+ping 192.168.10.10
+ping 8.8.8.8
+
+```
+> ✔ Si OK → réseau fonctionnel
+
+- 🧱 5. Installer Active Directory + DNS
+
+```
+
+Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+
+```
+
+- 🌳 6. Créer le domaine (forest)
+
+```
+Install-ADDSForest `
+-DomainName "corp.local" `
+-DomainNetbiosName "CORP" `
+-InstallDNS `
+-SafeModeAdministratorPassword (Read-Host -AsSecureString "Mot de passe DSRM")
+
+```
+
+> Mot de passe DSRM : Test1232X
+
+
+- 🔁 7. Après reboot (IMPORTANT)
+
+	- 🔹 Corriger DNS
+
+> Maintenant le serveur est DNS → il doit pointer sur lui-même :
+
+
+```
+
+Set-DnsClientServerAddress `
+-InterfaceAlias "LAN" `
+-ServerAddresses 127.0.0.1
+
+```
+
+
+- 🧪 8. Vérification AD
+
+```
+
+Get-ADDomain
+
+```
+
+> 👉 Doit afficher :
+> 
+>> corp.local
+>
+
+
+- 🧠 ⚠️ Pièges critiques
+
+```
+❌ 1. DNS mal configuré
+
+👉 Si tu laisses pfSense en DNS après AD → domaine cassé
+❌ 2. IP en DHCP
+
+👉 Un contrôleur AD DOIT être statique
+
+❌ 3. Nom du serveur après AD
+
+👉 Toujours renommer AVANT d’installer AD
+
+❌ 4. Pas de communication avec pfSense
+
+👉 Vérifier ping avant installation
+
+```
+
+- 🧱 Résultat final
+
+```
+
+| Élément     | Valeur        |
+| ----------- | ------------- |
+| Nom serveur | SRV-AD-01     |
+| IP          | 192.168.10.20 |
+| Gateway     | 192.168.10.10 |
+| DNS         | 127.0.0.1     |
+| Domaine     | corp.local    |
+
+
+```
+
+- 🚀 Prochaine étape
+
+> 👉 Une fois AD installé, tu pourras :
+
+
+	- Joindre un client Windows au domaine
+	- Créer des utilisateurs
+	- Configurer GPO
+	- Connecter la DMZ
+
+
+## Configure Windows10
+
