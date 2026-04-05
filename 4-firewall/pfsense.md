@@ -312,3 +312,151 @@ VBoxManage snapshot "Win10-Client2" take "lab-complet" --description "Membre dom
 
 
 
+
+
+---
+## Test connectivité internet depuis Win10-Client1
+---
+
+- Étape 1 — Vérifiez la configuration réseau
+```
+ipconfig /all
+```
+
+> Vérifiez
+>> ``` Passerelle par défaut : 192.168.56.2  ← doit pointer vers PFsense ```
+>> ``` DNS                   : 192.168.56.10 ← doit pointer vers AD-Server ```
+>
+
+- Étape 2 — Pingez PFsense
+```
+ping 192.168.56.2
+```
+
+- Étape 3 — Pingez internet
+```
+ping 8.8.8.8
+```
+
+- Étape 4 — Testez la résolution DNS
+```
+Resolve-DnsName google.com
+``
+
+> ⚠️ Si l'étape 1 affiche toujours 192.168.56.1
+> il faudra mettre à jour le DHCP sur AD-Server pour distribuer 192.168.56.2 comme nouvelle passerelle.
+
+
+---
+## Sur AD-Server via SSH
+---
+
+```
+# Mettre à jour la passerelle DHCP vers PFsense
+Set-DhcpServerv4OptionValue `
+    -ScopeId "192.168.56.0" `
+    -Router "192.168.56.2" `
+    -DnsServer "192.168.56.10" `
+    -DnsDomain "monlabo.local"
+```
+
+- Vérifiez
+```
+Get-DhcpServerv4OptionValue -ScopeId "192.168.56.0"
+```
+
+> Doit afficher 192.168.56.2 comme Router
+
+
+---
+## Sur Win10-Client1 — Forcez le renouvellement DHCP
+---
+
+```
+ipconfig /release
+ipconfig /renew
+ipconfig /all
+```
+> La passerelle doit maintenant afficher 192.168.56.2
+
+> ⚠️ Rappel : vos clients ont des IPs statiques 192.168.56.21 et 192.168.56.22 — il faudra aussi changer la passerelle manuellement sur chaque client.
+
+
+
+** L'IP a changé car le client a pris une IP DHCP au lieu de l'IP statique après le ipconfig /release /renew. **
+
+
+---
+## Reconfigurez l'IP statique sur Win10-Client1
+---
+
+```
+# Supprimer l'IP DHCP actuelle
+Remove-NetIPAddress -InterfaceAlias "Ethernet" -Confirm:$false
+Remove-NetRoute -InterfaceAlias "Ethernet" -Confirm:$false
+```
+
+```
+# Reconfigurer l'IP statique avec la bonne passerelle
+New-NetIPAddress `
+    -InterfaceAlias "Ethernet" `
+    -IPAddress "192.168.56.21" `
+    -PrefixLength 24 `
+    -DefaultGateway "192.168.56.2"
+```
+
+```
+# DNS vers AD-Server
+Set-DnsClientServerAddress `
+    -InterfaceAlias "Ethernet" `
+    -ServerAddresses "192.168.56.10"
+```
+
+```
+# Vérifier
+ipconfig /all
+```
+
+> Doit afficher :
+>> IPv4        : 192.168.56.21
+>> Passerelle  : 192.168.56.2
+>> DNS         : 192.168.56.10
+
+
+
+
+---
+## Ouvrir droit administrateur sur Win10-Client1
+---
+
+
+- Ouvrez une session sur Win10-Client1 avec le compte local :
+
+```
+Utilisateur : .\LocalAdmin
+Mot de passe : 
+
+
+Puis 
+
+Get-LocalGroup
+```
+>  Vous verrez les groupes locaux de Windows 10 dont Administrateurs
+
+
+
+-  Ajoutez jdupont
+```
+Add-LocalGroupMember `
+    -Group "Administrateurs" `
+    -Member "MONLABO\jdupont"
+```
+
+- Vérifiez
+```
+Get-LocalGroupMember -Group "Administrateurs"
+```
+
+> Doit afficher MONLABO\jdupont
+
+
