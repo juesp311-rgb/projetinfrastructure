@@ -10,6 +10,8 @@
 Dans le cadre de ma formation, j’ai mis en place une infrastructure réseau sécurisée comprenant un pare-feu pfSense, un serveur Active Directory, un serveur Web et un poste client.
 L’objectif est de simuler une architecture d’entreprise en assurant la sécurité, la gestion des utilisateurs et l’accès à un service web.
 
+Et créer  un laboratoire de tests de sécurité a été mis en place afin de simuler des attaques réalistes sur l’infrastructure Active Directory.
+
 ---
 ** 🎯 2. Objectifs du projet **
 ---
@@ -20,6 +22,9 @@ L’objectif est de simuler une architecture d’entreprise en assurant la sécu
 	- Sécuriser l’architecture avec une DMZ
 	- Permettre l’accès depuis un poste client
 
+
+	- Identifier d’éventuelles failles de sécurité
+	- Tester la robustesse des comptes présents dans le domaine.
 ---
 ** 🧱 3. Architecture réseau **
 ---
@@ -101,12 +106,45 @@ L’objectif est de simuler une architecture d’entreprise en assurant la sécu
 	- ✅ Blocage accès direct au LAN
 	- ✅ Résolution DNS fonctionnelle
 
-- ⚠️ 7. Problèmes rencontrés
+
+
+
+- 7- 🔐 Attaque réalisée :Nmap, Netdiscovrer, Kerberoasting
+
+- Une attaque de type Kerberoasting a été effectuée afin de récupérer les tickets de service (TGS) associés aux comptes disposant d’un SPN (Service Principal Name).
+
+- ⚙️ Outil utilisé
+	- Commandes bash
+	- Script GetUserSPNs.py issu de la suite Impacket
+
+- 💻 Commande utilisée
+```
+python3 /usr/share/doc/python3-impacket/examples/GetUserSPNs.py \
+monlabo.local/jdupont:******** \
+-dc-ip 192.168.56.10 \
+-request \
+-outputfile ~/formationtssr/projetinfrastructure/recon/kerberoast_hashes
+```
+
+- ⚠️ Analyse de sécurité
+
+- Cette attaque démontre que :
+
+- les comptes de service peuvent être vulnérables si leurs mots de passe sont faibles
+- un attaquant authentifié peut extraire des informations sensibles sans privilèges élevés
+
+- Ce test met en évidence l’importance de la sécurisation des comptes Active Directory et démontre la nécessité de mettre en place des bonnes pratiques en matière de cybersécurité.
+
+
+
+- ⚠️ 8. Problèmes rencontrés
 
 
 - Mauvaise configuration Ip Statique
 - Ping  bloqué par firewall
 - Conflit IP AD-Server et PFsenseClient 
+
+
 
 
 
