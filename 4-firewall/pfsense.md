@@ -460,3 +460,36 @@ Get-LocalGroupMember -Group "Administrateurs"
 > Doit afficher MONLABO\jdupont
 
 
+---
+## Mise en place règle firewall
+---
+
+```
+# Supprimer les anciennes règles
+Remove-NetFirewallRule -DisplayName "IIS HTTP" -ErrorAction SilentlyContinue
+Remove-NetFirewallRule -DisplayName "IIS HTTPS" -ErrorAction SilentlyContinue
+
+# Recréer les règles correctement
+New-NetFirewallRule `
+    -DisplayName "IIS HTTP" `
+    -Direction Inbound `
+    -Protocol TCP `
+    -LocalPort 80 `
+    -Profile Any `
+    -Action Allow
+
+New-NetFirewallRule `
+    -DisplayName "IIS HTTPS" `
+    -Direction Inbound `
+    -Protocol TCP `
+    -LocalPort 443 `
+    -Profile Any `
+    -Action Allow
+
+New-NetFirewallRule `
+    -DisplayName "ICMP Allow" `
+    -Direction Inbound `
+    -Protocol ICMPv4 `
+    -Profile Any `
+    -Action Allow
+```

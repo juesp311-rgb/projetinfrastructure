@@ -265,9 +265,187 @@ C:\SQLExpress.exe /QUIET /ACTION=Download /MEDIAPATH=C:\SQLMedia /MEDIATYPE=Core
 ```
 
 - Méthode installation avec Process 
+>Failed 
+
+> Installation en mode graphique OK/
+
+---
+## Tester l'installation
+---
+
+- Vérifiez que le service tourne
 ```
-Start-Process -FilePath "C:\SQLMedia\SQLEXPR_x64_FRA.exe" `
-    -ArgumentList "/ACTION=Install /FEATURES=SQLEngine /INSTANCENAME=SQLEXPRESS /SQLSVCACCOUNT='NT AUTHORITY\NETWORK SERVICE' /SQLSYSADMINACCOUNTS='MONLABO\Administrateur' /AGTSVCACCOUNT='NT AUTHORITY\NETWORK SERVICE' /IACCEPTSQLSERVERLICENSETERMS /INDICATEPROGRESS" `
-    -Wait `
-    -NoNewWindow
+Get-Service | Where-Object Name -like "*SQL*"
+```
+
+- Activez SQL Server au démarrage automatique
+```
+Set-Service -Name "MSSQL`$SQLEXPRESS" -StartupType Automatic
+```
+
+- Ouvrez le port SQL Server dans le pare-feu
+```
+New-NetFirewallRule `
+    -DisplayName "SQL Server Express" `
+    -Direction Inbound `
+    -Protocol TCP `
+    -LocalPort 1433 `
+    -Profile Any `
+    -Action Allow
+```
+
+- Testez la connexion SQL depuis SRV-Web
+```
+sqlcmd -S localhost\SQLEXPRESS -Q "SELECT @@VERSION"
+```
+
+- État complet de SRV-Web ✅
+```
+SRV-Web : 192.168.56.20
+    ├── IIS      → port 80/443  ✅
+    └── SQL Server 2022 Express → port 1433 ✅
+```
+
+
+
+---
+## Configure la base de donnée
+---
+
+- Créer la base de données
+
+```
+& "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe" `
+    -S "localhost\SQLEXPRESS" `
+    -Q "CREATE DATABASE IntranetDB"
+```
+
+```
+# Vérifier la création
+& "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe" `
+    -S "localhost\SQLEXPRESS" `
+    -Q "SELECT name FROM sys.databases"
+```
+
+> Doit afficher IntranetDB dans la liste
+
+
+- Créez les tables de la base de données
+```
+& "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe" `
+    -S "localhost\SQLEXPRESS" `
+    -Q "USE IntranetDB; CREATE TABLE Employes (ID INT PRIMARY KEY IDENTITY, Nom NVARCHAR(50), Prenom NVARCHAR(50), Departement NVARCHAR(50), Email NVARCHAR(100), DateCreation DATETIME DEFAULT GETDATE())"
+```
+
+```
+# Insérer les utilisateurs AD existants
+& "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe" `
+    -S "localhost\SQLEXPRESS" `
+    -Q "USE IntranetDB; INSERT INTO Employes (Nom, Prenom, Departement, Email) VALUES ('Dupont', 'Jean', 'Informatique', 'jdupont@monlabo.local'), ('Martin', 'Marie', 'Informatique', 'mmartin@monlabo.local'), ('Durand', 'Pierre', 'RH', 'pdurand@monlabo.local')"
+```
+
+```
+# Vérifier les données
+& "C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\sqlcmd.exe" `
+    -S "localhost\SQLEXPRESS" `
+    -Q "USE IntranetDB; SELECT * FROM Employes"
+```
+
+> ✅ Table Employes créée
+>>✅ 3 employés insérés :
+>>   - Jean Dupont    → Informatique
+>>   - Marie Martin   → Informatique
+>>   - Pierre Durand  → RH
+
+- Créer la page Intranet IIS
+> Sur SRV-Web :
+```
+# Créer le dossier de l'intranet
+New-Item -Path "C:\inetpub\wwwroot\intranet" -ItemType Directory -Force
+```
+
+``` # Créer la page HTML
+$html = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Intranet monlabo.local</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background: #f0f0f0; }
+        h1 { color: #003366; }
+        table { border-collapse: collapse; width: 100%; background: white; }
+        th { background: #003366; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #ddd; }
+        tr:nth-child(even) { background: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h1>🏢 Intranet monlabo.local</h1>
+    <h2>Annuaire des employés</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Département</th>
+            <th>Email</th>
+        </tr>
+        <tr><td>1</td><td>Dupont</td><td>Jean</td><td>Informatique</td><td>jdupont@monlabo.local</td></tr>
+        <tr><td>2</td><td>Martin</td><td>Marie</td><td>Informatique</td><td>mmartin@monlabo.local</td></tr>
+        <tr><td>3</td><td>Durand</td><td>Pierre</td><td>RH</td><td>pdurand@monlabo.local</td></tr>
+    </table>
+    <br>
+    <p>Serveur : SRV-Web | Domaine : monlabo.local</p>
+</body>
+</html>
+"@
+$html | Out-File "C:\inetpub\wwwroot\intranet\index.html" -Encoding UTF8
+```
+
+- Testez depuis Linux hôte
+```
+curl http://192.168.56.20/intranet/
+```
+
+
+---
+## Configurer DNS intranet.monlabo.local
+---
+
+> Sur AD-Server via SSH :
+
+- 1. Créer l'enregistrement DNS
+```
+Add-DnsServerResourceRecordA `
+    -Name "intranet" `
+    -ZoneName "monlabo.local" `
+    -IPv4Address "192.168.56.20" `
+    -TimeToLive 01:00:00
+```
+
+- 2. Vérifiez
+```
+Get-DnsServerResourceRecord `
+    -ZoneName "monlabo.local" `
+    -Name "intranet"
+```
+> Doit afficher intranet → 192.168.56.20
+
+
+- 3. Testez la résolution depuis Kali
+```
+nslookup intranet.monlabo.local 192.168.56.10
+```
+
+- 4. Testez depuis Win10-Client1
+```
+Resolve-DnsName "intranet.monlabo.local"
+```
+> Doit afficher 192.168.56.20
+
+
+- 5. Accédez via le navigateur sur Win10-Client1
+```
+http://intranet.monlabo.local
 ```
