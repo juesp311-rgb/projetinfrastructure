@@ -52,7 +52,7 @@ L’objectif est de simuler une architecture d’entreprise en assurant la sécu
 	- Interfaces configurées :
 		- WAN
 		- LAN
-		- DMZ
+		- DMZ (en cours)
 
 	- Règles firewall :
 		- Autorisation HTTP/HTTPS vers serveur web
