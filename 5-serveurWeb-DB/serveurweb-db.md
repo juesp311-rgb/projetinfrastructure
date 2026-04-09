@@ -118,6 +118,20 @@ Restart-Computer -Force
 ```
 Rename-Computer -NewName "SRV-Web" -Force
 ```
+```
+Remove-NetIPAddress `
+    -InterfaceIndex $ifIndex `
+    -IPAddress "192.168.56.22" `
+    -Confirm:$false
+```
+```
+Remove-NetRoute `
+    -InterfaceIndex $ifIndex `
+    -NextHop "192.168.56.2" `
+    -Confirm:$false
+```
+
+
 
 ```
 $ifIndex = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1).InterfaceIndex
@@ -408,6 +422,72 @@ $html | Out-File "C:\inetpub\wwwroot\intranet\index.html" -Encoding UTF8
 curl http://192.168.56.20/intranet/
 ```
 
+---
+## Snapshot de toutes les VMs
+---
+
+```
+VBoxManage snapshot "PFsense" take "lab-stable-v3" --description "PFsense WAN+LAN configuré"
+VBoxManage snapshot "SRV-Web" take "lab-stable-v3" --description "IIS+SQL+IntranetDB configurés"
+VBoxManage snapshot "AD-Server" take "lab-stable-v3" --description "AD+DHCP+DNS+FileServer+GPO+SRV-Web"
+VBoxManage snapshot "Win10-Client1" take "lab-stable-v3" --description "Membre domaine + admin local jdupont"
+VBoxManage snapshot "Win10-Client2" take "lab-stable-v3" --description "Membre domaine"
+```
+> Résultat 
+```
+┌──(jukali㉿kali)-[~]
+└─$ VBoxManage snapshot "PFsense" take "lab-stable-v3" --description "PFsense WAN+LAN configuré"
+VBoxManage snapshot "SRV-Web" take "lab-stable-v3" --description "IIS+SQL+IntranetDB configurés"
+VBoxManage snapshot "AD-Server" take "lab-stable-v3" --description "AD+DHCP+DNS+FileServer+GPO+SRV-Web"
+VBoxManage snapshot "Win10-Client1" take "lab-stable-v3" --description "Membre domaine + admin local jdupont"
+VBoxManage snapshot "Win10-Client2" take "lab-stable-v3" --description "Membre domaine"
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Snapshot taken. UUID: 44405cf2-e004-4c7f-a2d9-bd8935c4c9de
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Snapshot taken. UUID: 049b21eb-15a4-449e-9d02-d2962bb008ad
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Snapshot taken. UUID: c780dace-7014-4326-b575-0703b9a93e84
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Snapshot taken. UUID: 41f7245d-2e38-4e58-9ee3-5c5ebb0f19d9
+0%...10%...20%...30%...40%...50%...60%...70%...80%...90%...100%
+Snapshot taken. UUID: c9850677-57ba-4b6e-a320-1976e5cfbc39
+
+```
+
+>Commandes
+```
+ for vm in "PFsense" "AD-Server" "SRV-Web" "Win10-Client1" "Win10-Client2"; do
+    echo "=== $vm ==="
+    VBoxManage snapshot "$vm" list
+done
+```
+
+> Résultat
+```
+=== PFsense ===                                                                                         
+   Name: lab-stable-v3 (UUID: 44405cf2-e004-4c7f-a2d9-bd8935c4c9de) *                                   
+   Description: PFsense WAN+LAN configuré                                                               
+=== AD-Server ===                                                                                       
+   Name: AD-config-complete (UUID: 2b832ef0-f99c-4d15-9fe0-e009f72f5418)                                
+   Description: AD DS + DHCP + Users + Groups + OU                                                      
+      Name: lab-stable-v3 (UUID: c780dace-7014-4326-b575-0703b9a93e84) *                                
+      Description: AD+DHCP+DNS+FileServer+GPO+SRV-Web                                                   
+=== SRV-Web ===                                                                                         
+   Name: lab-stable-v3 (UUID: 049b21eb-15a4-449e-9d02-d2962bb008ad) *                                   
+   Description: IIS+SQL+IntranetDB configurés                                                           
+=== Win10-Client1 ===                                                                                   
+   Name: joined-domain (UUID: 88ce311d-df81-4d2f-824f-3d1264ded865)                                     
+   Description: Membre du domaine monlabo.local                                                         
+      Name: lab-stable-v3 (UUID: 41f7245d-2e38-4e58-9ee3-5c5ebb0f19d9) *                                
+      Description: Membre domaine + admin local jdupont                                                 
+=== Win10-Client2 ===
+   Name: joined-domain (UUID: 9c016474-0fd9-4302-b500-f631f0128e75)
+   Description: Membre du domaine monlabo.local
+      Name: lab-stable-v3 (UUID: c9850677-57ba-4b6e-a320-1976e5cfbc39) *
+      Description: Membre domaine
+```
+
+
 
 ---
 ## Configurer DNS intranet.monlabo.local
@@ -449,3 +529,39 @@ Resolve-DnsName "intranet.monlabo.local"
 ```
 http://intranet.monlabo.local
 ```
+
+
+
+---
+## Etat de la SI
+---
+
+```
+monlabo.local
+│
+├── PFsense        192.168.56.2   → Routeur/Firewall
+├── AD-Server      192.168.56.10  → AD + DNS + DHCP + File Server
+│                                   DNS : intranet.monlabo.local
+├── SRV-Web        192.168.56.20  → IIS + SQL Server
+│                                   http://intranet.monlabo.local
+├── Win10-Client1  192.168.56.21  → Poste jdupont ✅
+└── Win10-Client2  192.168.56.22  → Poste non configuré
+```
+
+---
+## Ssnapshot
+---
+
+```
+VBoxManage snapshot "AD-Server" take "dns-intranet-ok" --description "DNS intranet.monlabo.local configuré"
+```
+
+- Prochaines étapes possibles
+
+1. Windows Authentication IIS → login AD sur l'intranet
+2. WSUS → mises à jour centralisées
+3. Lab hacking → reprendre Kerberoasting
+4. Configurer Win10-Client2
+```
+
+
