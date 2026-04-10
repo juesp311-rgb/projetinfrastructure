@@ -353,6 +353,7 @@ Resolve-DnsName google.com
 
 ```
 # Mettre à jour la passerelle DHCP vers PFsense
+```
 Set-DhcpServerv4OptionValue `
     -ScopeId "192.168.56.0" `
     -Router "192.168.56.2" `
@@ -493,3 +494,4 @@ New-NetFirewallRule `
     -Profile Any `
     -Action Allow
 ```
+
