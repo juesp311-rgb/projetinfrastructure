@@ -195,7 +195,7 @@ Appuyez sur Entrée → laisser vide
 
 - Depuis votre Linux hôte, ouvrez un navigateur et tapez :
 ```
-https://192.168.56.1
+https://192.168.56.2
 ```
 > ⚠️ Acceptez le certificat SSL auto-signé
 
