@@ -85,20 +85,6 @@ Rename-Computer -NewName "SRV-Web" -Force
 ```
 
 ```
-$ifIndex = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1).InterfaceIndex
-
-New-NetIPAddress `
-    -InterfaceIndex $ifIndex `
-    -IPAddress "192.168.56.20" `
-    -PrefixLength 24 `
-    -DefaultGateway "192.168.56.2"
-
-Set-DnsClientServerAddress `
-    -InterfaceIndex $ifIndex `
-    -ServerAddresses "192.168.56.10"
-```
-
-```
 Restart-Computer -Force
 ```
 
@@ -562,6 +548,6 @@ VBoxManage snapshot "AD-Server" take "dns-intranet-ok" --description "DNS intran
 2. WSUS → mises à jour centralisées
 3. Lab hacking → reprendre Kerberoasting
 4. Configurer Win10-Client2
-```
+
 
 
