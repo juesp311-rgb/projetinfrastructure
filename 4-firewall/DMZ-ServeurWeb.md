@@ -13,7 +13,7 @@ Lan :
 Connecté par 
 DNS/Kerberos/LDAP
 
-DMZ - 192.168.00.0/24
+DMZ - 192.168.100.2/24
 	SRV-Web : 192.168.100.10 : IIS + SQL
 	Interface Virtualbox 
 		Adatpter 1 : NAT
