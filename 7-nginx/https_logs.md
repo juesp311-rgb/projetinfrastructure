@@ -14,8 +14,8 @@ wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500   inet 192.168.1.100
  
 - ├── PFsense
 ```
-LAN : 192.168.56.2-24,
-OPT1(=DMZ) : 192.3168.100.2/24
+LAN : 192.168.56.2/24,
+OPT1(=DMZ) : 192.168.100.2/24
 WAN : 10.0.2.15/24                        
 ```
 
