@@ -1,5 +1,9 @@
 # Résolution — Remise en place du serveur HTTPS `intranet2.monlabo.local`
 
+![DMZ Nginx HTTPS](https://raw.githubusercontent.com/juesp311-rgb/projetinfrastructure/main/imageProjet/Dmz-nginx-https.png)
+
+
+
 ## Architecture de l'environnement
 
 ```
