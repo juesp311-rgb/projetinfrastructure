@@ -61,7 +61,7 @@ ICMP — protocole à part dans PFsense, pas TCP ni UDP. Dans le menu déroulant
 > à faire : 
 >> > Désactivez aussi l'interface d'administration PFsense depuis la DMZ : Interfaces → LAN uniquement pour l'>
 
-----
+
 
 > Le trafic reste entièrement dans la DMZ, donc PFsense n'intervient pas du tout. Win10-Client1 (.100.50) contacte directement SRV-WEB (.100.10) sur le port 8443 — les deux machines sont sur le même segment 192.168.100.0/24, le switch virtuel VirtualBox gère ça localement.
 ---
@@ -403,39 +403,6 @@ Start-Sleep -Seconds 5
 netstat -ano | findstr "LISTENING" | findstr ":443\|:8443\|:80"
 ```
 
-> Failed, création du fichier 
-```
-@'
-$thumb = "9ad3113b038f01abd70b5d5ec0f4b8e333c756e8"
-$cert = Get-ChildItem Cert:\LocalMachine\My\$thumb
-$rsaKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
-$uniqueName = $rsaKey.Key.UniqueName
-$keyPath = "$env:ALLUSERSPROFILE\Microsoft\Crypto\Keys\$uniqueName"
-
-Write-Host "Chemin cle : $keyPath"
-
-$acl = Get-Acl $keyPath
-
-$sidIIS = New-Object System.Security.Principal.SecurityIdentifier("S-1-5-32-568")
-$sidNS  = New-Object System.Security.Principal.SecurityIdentifier("S-1-5-20")
-
-$rule1 = New-Object System.Security.AccessControl.FileSystemAccessRule($sidIIS,"Read","Allow")
-$rule2 = New-Object System.Security.AccessControl.FileSystemAccessRule($sidNS,"Read","Allow")
-
-$acl.AddAccessRule($rule1)
-$acl.AddAccessRule($rule2)
-Set-Acl $keyPath $acl
-Write-Host "Permissions accordees."
-
-Restart-Service W3SVC
-Start-Sleep -Seconds 5
-netstat -ano | findstr "LISTENING" | findstr ":443\|:8443"
-'@ | Out-File -FilePath C:\fix-iis-cert.ps1 -Encoding UTF8
-
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-& C:\fix-iis-cert.ps1
-```
-
 
 - Résultat 
 ```
@@ -652,7 +619,6 @@ Get-ADDefaultDomainPasswordPolicy |
 | Durée de verrouillage        | 30 minutes         | Déverrouillage automatique |
 | Réinitialisation du compteur | 15 minutes         | Remet le compteur à zéro   |
 
-```
 
 - Audit des accès 
 	- apprend à lire les logs Windows. 
@@ -665,10 +631,9 @@ auditpol /set /subcategory:"{0cce9217-69ae-11d9-bed3-505054503030}" /success:ena
 auditpol /set /subcategory:"{0cce9235-69ae-11d9-bed3-505054503030}" /success:enable /failure:enable
 
 # Vérifier
-auditpol /get /category:*```
-
-
+auditpol /get /category:*
 ```
+
 - Maintenant consultez les logs pour voir quelles machines se connectent :
 
 ```
@@ -729,11 +694,153 @@ Get-EventLog -LogName Security -InstanceId 4625 -Newest 20 |
 
 
 ---
-## 
-
-
-Couche 3 — Ubuntu / Nginx
+## Couche 3 — Ubuntu / Nginx
 ---
+
+---
+### Vérification de l'environnement
+---
+
+
+- Informations sur le serveur web (SRV-WEB)
+```
+$webServer = "SRV-WEB"
+$webServerOS = (Get-WmiObject -Class Win32_OperatingSystem -ComputerName $webServer).Caption
+$webSite = "https://intranet2.monlabo.local"
+
+Write-Host "Serveur Web (SRV-WEB) :"
+Write-Host "  - Système d'exploitation : $webServerOS"
+Write-Host "  - Adresse IP : " (Test-Connection -ComputerName $webServer -Count 1).IPV4Address.IPAddressToString
+Write-Host "  - Site web : $webSite"
+```
+- Informations sur le domaine Active Directory
+```
+$adServer = "192.168.100.5"
+$adDomain = (Get-ADDomain -Server $adServer).DNSRoot
+
+Write-Host "Domaine Active Directory :"
+Write-Host "  - Serveur AD : $adServer"
+Write-Host "  - Nom de domaine AD : $adDomain"
+```
+
+- Informations sur le pare-feu pfSense
+```
+$pfSenseIP = "192.168.100.2"
+
+Write-Host "Pare-feu pfSense :"
+Write-Host "  - Adresse IP (DMZ) : $pfSenseIP"
+```
+
+- Informations sur un poste client (exemple : Win10-Client1)
+```
+$clientName = "Win10-Client1"
+$clientIP = (Test-Connection -ComputerName $clientName -Count 1).IPV4Address.IPAddressToString
+$clientGateway = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled=$true" -ComputerName $clientName).DefaultIPGateway
+
+Write-Host "Poste client (Win10-Client1) :"
+Write-Host "  - Adresse IP : $clientIP"
+Write-Host "  - Passerelle par défaut : $clientGateway"
+```
+
+- Résolution DNS
+```
+$dnsServers = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled=$true" -ComputerName $clientName).DNSServerSearchOrder
+$dnsResult = Resolve-DnsName -Name $webSite -Server $dnsServers[0] -DnsOnly -NoHostsFile -ErrorAction SilentlyContinue
+
+Write-Host "Résolution DNS :"
+Write-Host "  - Serveurs DNS configurés sur le poste client : $dnsServers"
+if ($dnsResult) {
+    Write-Host "  - Résolution de $webSite : " $dnsResult.IPAddress
+} else {
+    Write-Host "  - Résolution de $webSite : échec"
+}
+```
+
+- Information sur Ubuntu Server (Nginx)
+
+```
+# Fichiers de configuration Nginx :
+sudo cat /etc/nginx/nginx.conf
+   sudo ls -l /etc/nginx/sites-available/
+   sudo cat /etc/nginx/sites-available/intranet2.monlabo.local
+
+# Informations sur le certificat SSL :
+sudo grep -E 'ssl_certificate|ssl_certificate_key' /etc/nginx/sites-available/intranet2.monlabo.local
+   sudo openssl x509 -in /path/to/your/certificate.crt -noout -issuer -enddate
+
+# Remplacez /path/to/your/certificate.crt par le chemin vers votre fichier de certificat.
+
+# En-têtes de sécurité HTTP configurés :
+
+sudo grep -E 'add_header' /etc/nginx/sites-available/intranet2.monlabo.local
+
+
+# Version de Nginx :
+nginx -v
+
+# Version d'OpenSSL utilisée par Nginx :
+nginx -V 2>&1 | grep OpenSSL
+
+# Plugins ou modules Nginx installés :
+nginx -V 2>&1 | grep 'configure arguments:'
+
+
+# Emplacement des logs Nginx :
+sudo grep -E 'access_log|error_log' /etc/nginx/nginx.conf
+   sudo grep -E 'access_log|error_log' /etc/nginx/sites-available/intranet2.monlabo.local
+
+
+```
+
+
+```
+---
+#### éléments de sécurité applicative pour votre site web
+---
+
+> Les headers HTTP sécurisés
+> HSTS (HTTP Strict Transport Security)
+> La redirection HTTP vers HTTPS
+> Le certificat SSL renforcé
+> La mise en place d'une politique de sécurité des contenus (CSP)
+
+- Headers HTTP sécurisés (Haute priorité) :
+```
+$websiteName = "intranet2.monlabo.local"
+$headers = @{
+  'X-XSS-Protection' = '1; mode=block'
+  'X-Frame-Options' = 'SAMEORIGIN'  
+  'X-Content-Type-Options' = 'nosniff'
+  'Referrer-Policy' = 'strict-origin-when-cross-origin'
+  'Permissions-Policy' = 'geolocation=(), microphone=()'
+}
+
+foreach ($key in $headers.Keys) {
+  $existingHeader = Get-WebConfigurationProperty -PSPath "IIS:\Sites\$websiteName" -Filter "system.webServer/httpProtocol/customHeaders/add[@name='$key']" -Name "."
+  if ($existingHeader) {
+    Clear-WebConfiguration -PSPath "IIS:\Sites\$websiteName" -Filter "system.webServer/httpProtocol/customHeaders/add[@name='$key']"
+  }
+  Add-WebConfigurationProperty -PSPath "IIS:\Sites\$websiteName" -Filter "system.webServer/httpProtocol/customHeaders" -Name "." -Value @{name=$key; value=$headers[$key]}
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------
+------------------------------
+-------------------------------
+--------------------------------
 - UFW (firewall local)
 
 ```
