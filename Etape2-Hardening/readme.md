@@ -459,16 +459,6 @@ Test-NetConnection -ComputerName 192.168.100.10 -Port 80 (non sécurisé)
 | LAN → DMZ      | Bloqué par PFsense | Isolation OK       |
 | DMZ → LAN      | Bloqué par PFsense | Isolation OK       |
 
-
-
-
-
-
-
-
-
-
-
 ---
 ## Couche 2 — AD-Server (GPO)
 ---
@@ -792,8 +782,6 @@ sudo grep -E 'access_log|error_log' /etc/nginx/nginx.conf
 
 ```
 
-
-```
 ---
 #### éléments de sécurité applicative pour votre site web
 ---
@@ -804,27 +792,383 @@ sudo grep -E 'access_log|error_log' /etc/nginx/nginx.conf
 > Le certificat SSL renforcé
 > La mise en place d'une politique de sécurité des contenus (CSP)
 
-- Headers HTTP sécurisés (Haute priorité) :
-```
-$websiteName = "intranet2.monlabo.local"
-$headers = @{
-  'X-XSS-Protection' = '1; mode=block'
-  'X-Frame-Options' = 'SAMEORIGIN'  
-  'X-Content-Type-Options' = 'nosniff'
-  'Referrer-Policy' = 'strict-origin-when-cross-origin'
-  'Permissions-Policy' = 'geolocation=(), microphone=()'
-}
 
-foreach ($key in $headers.Keys) {
-  $existingHeader = Get-WebConfigurationProperty -PSPath "IIS:\Sites\$websiteName" -Filter "system.webServer/httpProtocol/customHeaders/add[@name='$key']" -Name "."
-  if ($existingHeader) {
-    Clear-WebConfiguration -PSPath "IIS:\Sites\$websiteName" -Filter "system.webServer/httpProtocol/customHeaders/add[@name='$key']"
-  }
-  Add-WebConfigurationProperty -PSPath "IIS:\Sites\$websiteName" -Filter "system.webServer/httpProtocol/customHeaders" -Name "." -Value @{name=$key; value=$headers[$key]}
-}
+---
+###  Headers HTTP sécurisés (Haute priorité) :
+---
+
+- Ouvrez le fichier de configuration de votre site dans un éditeur de texte avec les privilèges sudo :
+```
+sudo nano /etc/nginx/sites-available/intranet2.monlabo.local
 ```
 
 
+```
+server {
+    listen 8080;
+    server_name intranet2.monlabo.local;
+    return 301 https://$host:8443$request_uri;
+}
+
+# HTTPS
+server {
+    listen 8443 ssl;
+    server_name intranet2.monlabo.local;
+    ssl_certificate     /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # Ajout des en-têtes de sécurité
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header Permissions-Policy "geolocation=(), microphone=()";
+
+    access_log  /var/log/nginx/intranet-dmz-access.log;
+    error_log   /var/log/nginx/intranet-dmz-error.log warn;
+
+    location / {
+        proxy_pass         http://192.168.100.10;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+
+
+- Dans le bloc server correspondant à votre site HTTPS (port 8443), ajoutez les lignes suivantes pour configurer les en-têtes de sécurité :
+
+> X-XSS-Protection : Permet de protéger contre les attaques de type cross-site scripting (XSS).
+> X-Frame-Options : Empêche votre site d'être intégré dans d'autres pages web via des iframes, ce qui peut aider à prévenir les attaques de type clickjacking.
+> X-Content-Type-Options : Empêche les navigateurs d'essayer de deviner le type MIME d'une ressource, ce qui peut conduire à des attaques de type MIME sniffing.
+> Referrer-Policy : Contrôle les informations envoyées dans l'en-tête Referer lorsqu'un utilisateur suit un lien depuis votre site.
+> Permissions-Policy : Permet de contrôler les fonctionnalités accessibles par votre site dans le navigateur de l'utilisateur (ici, la géolocalisation et le microphone sont désactivés).
+
+- Testez la configuration Nginx pour vous assurer qu'il n'y a pas d'erreurs de syntaxe :
+``` 
+sudo nginx -t
+```
+> adminsys@ubuntuservername:~$ sudo nginx -t
+>nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+>nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+
+
+- Si la configuration est correcte, rechargez Nginx pour appliquer les changements :
+```
+sudo systemctl reload nginx
+```
+- Vous pouvez maintenant vérifier que les en-têtes sont bien présents en utilisant curl :
+```
+curl -kI https://intranet2.monlabo.local:8443
+```
+```
+curl -kI https://intranet2.monlabo.local:8443                                          
+HTTP/1.1 200 OK                                                                                                     
+Server: nginx/1.24.0 (Ubuntu)                                                                                       
+Date: Wed, 29 Apr 2026 08:25:47 GMT                                                                                 
+Content-Type: text/html                                                                                             
+Content-Length: 242                                                                                                 
+Connection: keep-alive                                                                                              
+Last-Modified: Fri, 10 Apr 2026 12:31:15 GMT                                                                        
+Accept-Ranges: bytes                                                                                                
+ETag: "3574c5ece5c8dc1:0"                                                                                           
+X-Powered-By: ASP.NET                                                                                               
+X-XSS-Protection: 1; mode=block                                                                                     
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=()
+
+```
+
+> L'option -k indique à curl d'accepter les connexions même si le certificat ne peut pas être vérifié. 
+
+> Vous pouvez également remarquer que le serveur renvoie un code de statut HTTP 200 OK, ce qui indique que la requête a réussi et que le serveur a renvoyé le contenu demandé.
+
+---
+###  Configuration HSTS -HTTP Strict Transport Security)
+---
+
+- Ouvrez le fichier de configuration de votre site dans un éditeur de texte avec les privilèges sudo :
+
+```
+sudo nano /etc/nginx/sites-available/intranet2.monlabo.local
+```
+
+- Dans le bloc server correspondant à votre site HTTPS (port 8443), ajoutez la ligne suivante pour activer HSTS :
+```
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```
+
+> Explication des paramètres :
+>> max-age=31536000 : Cela indique aux navigateurs de se souvenir de cette règle pendant un an (31536000 secondes).
+>> includeSubDomains : Cela applique la règle HSTS à tous les sous-domaines de votre site.
+>> always : Cela garantit que l'en-tête est toujours envoyé, même pour les pages d'erreur.
+
+
+- Testez la configuration Nginx pour vous assurer qu'il n'y a pas d'erreurs de syntaxe :
+```
+sudo nginx -t
+```
+-Si la configuration est correcte, rechargez Nginx pour appliquer les changements :
+
+```
+sudo systemctl reload nginx
+```
+
+- Vous pouvez maintenant vérifier que l'en-tête HSTS est bien présent en utilisant curl :
+```
+curl -kI https://intranet2.monlabo.local:8443
+```
+
+> Vous devriez voir l'en-tête Strict-Transport-Security dans la sortie.
+```
+curl -kI https://intranet2.monlabo.local:8443
+HTTP/1.1 200 OK
+Server: nginx/1.24.0 (Ubuntu)
+Date: Wed, 29 Apr 2026 08:40:41 GMT
+Content-Type: text/html
+Content-Length: 242
+Connection: keep-alive
+Last-Modified: Fri, 10 Apr 2026 12:31:15 GMT
+Accept-Ranges: bytes
+ETag: "3574c5ece5c8dc1:0"
+X-Powered-By: ASP.NET
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=()
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+> ``` Strict-Transport-Security: max-age=31536000; includeSubDomains ```
+>> Cela confirme que votre configuration Nginx inclut maintenant l'en-tête HSTS avec les paramètres que nous avons spécifiés :
+>> max-age=31536000 : Les navigateurs se souviendront de cette règle pendant un an.
+>> includeSubDomains : La règle HSTS s'applique à tous les sous-domaines de votre site.
+
+
+---
+### LEt's encrypt : Certificat SSL
+---
+
+
+---
+#### Voici quelques points à vérifier :
+
+- Connectivité entre le serveur Ubuntu et SRV-Web :
+
+Depuis votre serveur Ubuntu, essayez de ping SRV-Web à l'adresse 192.168.100.10 pour vérifier la connectivité de base.
+Essayez de vous connecter à SRV-Web sur le port 80 en utilisant telnet ou nc depuis le serveur Ubuntu pour vérifier que le port est ouvert et accessible.
+
+
+- Configuration Nginx :
+
+Vérifiez que la configuration Nginx sur votre serveur Ubuntu pointe vers la bonne adresse IP pour SRV-Web (192.168.100.10) dans la directive proxy_pass.
+Assurez-vous qu'il n'y a pas d'erreurs dans les logs Nginx (/var/log/nginx/error.log) lors du rechargement de la configuration ou lors des tentatives de connexion.
+
+
+- Pare-feu sur le serveur Ubuntu :
+
+Vérifiez que votre pare-feu (UFW) sur le serveur Ubuntu autorise le trafic entrant sur les ports 80 et 443.
+Vérifiez également que le trafic est autorisé entre le serveur Ubuntu et SRV-Web sur le réseau interne.
+
+
+- SRV-Web :
+
+Vérifiez que le serveur web (IIS, je suppose, puisqu'il s'agit d'un serveur Windows) sur SRV-Web est en cours d'exécution et qu'il écoute sur le port 80.
+Assurez-vous que le pare-feu Windows sur SRV-Web autorise le trafic entrant sur le port 80.
+
+
+- AD-Server et DNS :
+
+Vérifiez que AD-Server (192.168.100.5) peut résoudre correctement le nom intranet2.monlabo.local en l'adresse IP du serveur Ubuntu (192.168.100.20).
+Assurez-vous que les clients sur le réseau sont configurés pour utiliser AD-Server comme leur serveur DNS.
+
+
+- Accès depuis les clients :
+
+Depuis un client sur le réseau interne, essayez d'accéder à http://intranet2.monlabo.local et https://intranet2.monlabo.local pour voir si la connexion est redirigée correctement vers le serveur Ubuntu.
+Si possible, essayez également d'accéder directement à http://192.168.100.20 et https://192.168.100.20 depuis un client pour isoler tout problème potentiel de DNS.
+---
+
+
+
+
+
+
+- Modification configuration NGINX pour écouter sur les ports standards HTTP (80) et HTTPS (443) :
+```
+server {
+    listen 80;
+    server_name intranet2.monlabo.local;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS
+server {
+    listen 443 ssl;
+    server_name intranet2.monlabo.local;
+    ssl_certificate     /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # Ajout des en-têtes de sécurité
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header Permissions-Policy "geolocation=(), microphone=()";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    access_log  /var/log/nginx/intranet-dmz-access.log;
+    error_log   /var/log/nginx/intranet-dmz-error.log warn;
+
+    location / {
+        proxy_pass         http://192.168.100.10;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```
+sudo systemctl reload nginx
+```
+```
+sudo ufw allow 'Nginx Full'
+```
+
+
+> Création d'un fichier .bak de sauvegardes
+
+
+
+
+- Pour vérifier la connectivité au port 80 sur SRV-Web (192.168.100.10) depuis votre serveur Ubuntu, vous pouvez utiliser la commande telnet ou nc (netcat).
+```
+telnet 192.168.100.10 80
+```
+- Si la connexion est établie, vous verrez quelque chose comme :
+```
+Trying 192.168.100.10...
+Connected to 192.168.100.10.
+Escape character is '^]'.
+```
+
+Vous pouvez alors envoyer une requête HTTP manuelle, par exemple :
+```
+GET / HTTP/1.1
+Host: intranet2.monlabo.local
+```
+
+```
+Appuyez deux fois sur Entrée après la dernière ligne. Si le serveur web répond, vous verrez les en-têtes HTTP et éventuellement le contenu de la page.
+```
+
+- où avec Avec nc (netcat) :
+
+```
+nc -v 192.168.100.10 80
+```
+-Si la connexion est établie, vous verrez quelque chose comme :
+```
+Connection to 192.168.100.10 80 port [tcp/http] succeeded!
+```
+
+- Vérification de la configuration NGINX
+```
+server {
+    listen 80;
+    server_name intranet2.monlabo.local;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS
+server {
+    listen 443 ssl;
+    server_name intranet2.monlabo.local;
+    ssl_certificate     /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # Ajout des en-têtes de sécurité
+    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header Referrer-Policy "strict-origin-when-cross-origin";
+    add_header Permissions-Policy "geolocation=(), microphone=()";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    access_log  /var/log/nginx/intranet-dmz-access.log;
+    error_log   /var/log/nginx/intranet-dmz-error.log warn;
+
+    location / {
+        proxy_pass         http://192.168.100.10;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+}
+
+```
+
+> Le premier bloc server écoute sur le port 80 (HTTP) et redirige toutes les requêtes vers HTTPS en utilisant un code de statut 301 (redirection permanente).
+> Le deuxième bloc server écoute sur le port 443 (HTTPS) et gère les requêtes SSL/TLS.
+> Les directives ssl_certificate et ssl_certificate_key spécifient l'emplacement de votre certificat SSL et de la clé privée associée.
+> Les directives ssl_protocols et ssl_ciphers définissent les protocoles et les chiffrements SSL/TLS autorisés, en privilégiant les options sécurisées.
+> Les directives add_header ajoutent des en-têtes de sécurité supplémentaires aux réponses HTTP, comme discuté précédemment.
+> Les directives access_log et error_log définissent l'emplacement des fichiers de log pour ce site.
+> Le bloc location / agit comme un proxy inverse, transférant les requêtes à votre serveur web sur SRV-Web (192.168.100.10) et passant les en-têtes nécessaires.
+
+
+
+- Vérification parefeu Nging
+```
+sudo ufw status
+```
+
+> ok 
+
+
+
+- Vérifiez le log d'accès Nginx avec la commande suivante :
+
+```
+sudo tail -n 20 /var/log/nginx/intranet-dmz-access.log
+```
+
+```
+sudo tail -n 20 /var/log/nginx/intranet-dmz-error.log
+```
+
+- Certificat auto-signé 
+	- Obtenir un certificat SSL signé par une autorité de certification (CA) de confiance. Vous pouvez acheter un certificat auprès d'une CA commerciale ou en obtenir un gratuitement auprès de Let's Encrypt. C'est l'approche recommandée pour les sites de production.
+	- Si c'est juste pour des tests internes ou du développement, vous pouvez faire en sorte que vos clients internes fassent confiance à votre certificat auto-signé. Pour cela, vous devez installer le certificat auto-signé dans le magasin de certificats de confiance sur chaque machine cliente. La procédure exacte dépend du système d'exploitation et du navigateur web.
+> Option 2 :)
+
+---
+####  Voici un guide général pour installer un certificat auto-signé sur les machines clientes :
+---
+
+- Exportez votre certificat auto-signé depuis votre serveur Ubuntu dans un format approprié (généralement PEM ou CRT). Vous pouvez le faire avec une commande comme celle-ci :
+
+```
+sudo openssl x509 -in /etc/nginx/ssl/nginx.crt -out intranet2.monlabo.local.crt -outform PEM
+```
 
 
 
